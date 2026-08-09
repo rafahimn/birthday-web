@@ -2,6 +2,7 @@ import Link from "next/link";
 import { signup } from "@/lib/actions";
 import { SITE_TITLE } from "@/lib/brand";
 import SubmitButton from "@/components/SubmitButton";
+import GoogleButton from "@/components/GoogleButton";
 
 export default async function SignupPage({
   searchParams,
@@ -38,6 +39,14 @@ export default async function SignupPage({
         <input type="password" name="password" required minLength={6} className="input mb-6" />
 
         <SubmitButton pendingText="Creating account...">Create account</SubmitButton>
+
+        <div className="my-5 flex items-center gap-3 text-xs text-stone-400">
+          <span className="h-px flex-1 bg-stone-200" />
+          or
+          <span className="h-px flex-1 bg-stone-200" />
+        </div>
+
+        <GoogleButton />
 
         <p className="mt-5 text-center text-sm text-stone-500">
           আগে থেকে অ্যাকাউন্ট আছে?{" "}

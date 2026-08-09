@@ -11,9 +11,10 @@ export async function signup(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
   const invite = String(formData.get("invite") ?? "").trim();
+  const inviteQuery = invite ? `&invite=${encodeURIComponent(invite)}` : "";
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) {
     // Supabase returns this specific error only when it fails to send the
     // confirmation email over SMTP — the user account itself is still
@@ -21,9 +22,23 @@ export async function signup(formData: FormData) {
     // confirmation, that failed email doesn't matter — don't block signup on it.
     const isHarmlessEmailError = /error sending confirmation email/i.test(error.message);
     if (!isHarmlessEmailError) {
-      const inviteQuery = invite ? `&invite=${encodeURIComponent(invite)}` : "";
       redirect(`/signup?error=${encodeURIComponent(error.message)}${inviteQuery}`);
     }
+  }
+
+  // Supabase doesn't return an error when the email is already registered
+  // (e.g. someone already signed up/logged in with this Gmail address via
+  // "Continue with Google") — it silently no-ops instead, to avoid leaking
+  // which emails have accounts. The tell is an empty `identities` array.
+  // Without this check, the person thinks they created a new password
+  // account, but no password was ever set, so their next login attempt
+  // fails with "Invalid login credentials".
+  if (data?.user && data.user.identities && data.user.identities.length === 0) {
+    redirect(
+      `/signup?error=${encodeURIComponent(
+        "এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে। Log in করো — যদি আগে Google দিয়ে সাইন ইন করে থাকো, 'Continue with Google' ব্যবহার করো।"
+      )}${inviteQuery}`
+    );
   }
 
   // If they came through an admin-shared invite link, auto-approve the
@@ -36,6 +51,28 @@ export async function signup(formData: FormData) {
   // them auto-signed-in from signUp.
   await supabase.auth.signOut();
   redirect("/login?created=1");
+}
+
+/** Kicks off Google OAuth. Supabase redirects the browser to Google, then
+ *  back to /auth/callback (which exchanges the code for a session and
+ *  sends the user on to /dashboard). Requires the Google provider to be
+ *  enabled in Supabase Auth settings with a Client ID/Secret configured. */
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin");
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback?next=/dashboard`,
+    },
+  });
+
+  if (error || !data?.url) {
+    redirect(`/login?error=${encodeURIComponent(error?.message ?? "Google দিয়ে লগইন করা যায়নি।")}`);
+  }
+
+  redirect(data.url);
 }
 
 export async function login(formData: FormData) {

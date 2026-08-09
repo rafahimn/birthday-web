@@ -2,6 +2,7 @@ import Link from "next/link";
 import { login } from "@/lib/actions";
 import { SITE_TITLE } from "@/lib/brand";
 import SubmitButton from "@/components/SubmitButton";
+import GoogleButton from "@/components/GoogleButton";
 
 export default async function LoginPage({
   searchParams,
@@ -20,7 +21,15 @@ export default async function LoginPage({
         <p className="mb-6 text-center text-sm text-stone-500">Manage your birthday site(s)</p>
 
         {error && (
-          <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+          <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+            {error}
+            {/invalid login credentials/i.test(error) && (
+              <>
+                {" "}
+                যদি আগে Google দিয়ে সাইন ইন করে থাকো, নিচে &quot;Continue with Google&quot; দিয়ে ঢোকো।
+              </>
+            )}
+          </p>
         )}
         {reset && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
@@ -45,6 +54,14 @@ export default async function LoginPage({
         <input type="password" name="password" required className="input mb-6" />
 
         <SubmitButton pendingText="Logging in...">Log in</SubmitButton>
+
+        <div className="my-5 flex items-center gap-3 text-xs text-stone-400">
+          <span className="h-px flex-1 bg-stone-200" />
+          or
+          <span className="h-px flex-1 bg-stone-200" />
+        </div>
+
+        <GoogleButton />
 
         <p className="mt-5 text-center text-sm text-stone-500">
           Don&apos;t have an account?{" "}

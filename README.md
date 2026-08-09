@@ -14,7 +14,7 @@ the public share link.
   an iframe, a 3-step "how it works", and Log in / Sign up.
 - `app/demo/page.tsx` + `lib/demoData.ts` — the public demo (hardcoded
   placeholder data, no database).
-- `app/login`, `app/signup` — Supabase Auth (email/password).
+- `app/login`, `app/signup` — Supabase Auth (email/password + Google OAuth).
 - `app/dashboard/page.tsx` — a member's list of sites + create new.
 - `app/dashboard/[siteId]/...` — the per-site admin panel (Overview with
   live preview + publish toggle + slug editor, Countdown & Greeting,
@@ -42,6 +42,26 @@ the public share link.
    policies that make ownership + the public share link work.
 4. Authentication → Providers → Email → make sure "Allow new users to
    sign up" is **ON** (members create their own accounts from `/signup`).
+5. Authentication → Providers → Google → turn it **ON** and paste in the
+   Client ID + Client Secret from a Google Cloud OAuth app. Google's
+   console needs this Authorized redirect URI (Supabase shows the exact
+   value on this same page):
+   `https://<your-project-ref>.supabase.co/auth/v1/callback`
+6. Authentication → URL Configuration → set **Site URL** to your deployed
+   domain, and add both your deployed domain and `http://localhost:3000`
+   under **Redirect URLs** (each followed by `/auth/callback`, e.g.
+   `https://yourdomain.com/auth/callback`). Without this, Google login
+   will redirect back to the wrong place after sign-in.
+
+**Note on Gmail + Google login together:** if someone already has an
+account for a given email (created either via the password form or via
+"Continue with Google"), signing up again with the *same* email through
+the *other* method won't create a second account — Supabase silently
+merges/ignores it. `signup()` in `lib/actions.ts` detects this case and
+tells the person to log in (or use Google) instead of leaving them with
+a broken password. If you ever see "Invalid login credentials" reports
+after adding Google login, this is almost always why: the person's
+email already exists as a Google-only account with no password set.
 
 If you're migrating from the old single-site version of this project,
 see the migration notes at the bottom of `supabase_schema.sql`.
