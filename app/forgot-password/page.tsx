@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { forgotPassword } from "@/lib/actions";
 import { SITE_TITLE } from "@/lib/brand";
+import SubmitButton from "@/components/SubmitButton";
 
 export default async function ForgotPasswordPage({
   searchParams,
@@ -32,7 +33,7 @@ export default async function ForgotPasswordPage({
           <form action={forgotPassword}>
             <label className="mb-1 block text-sm font-medium text-stone-600">Email</label>
             <input type="email" name="email" required className="input mb-6" />
-            <button type="submit" className="btn-primary w-full">Reset link পাঠাও</button>
+            <SubmitButton pendingText="Sending...">Reset link পাঠাও</SubmitButton>
           </form>
         )}
 

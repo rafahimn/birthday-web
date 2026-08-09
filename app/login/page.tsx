@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { login } from "@/lib/actions";
 import { SITE_TITLE } from "@/lib/brand";
+import SubmitButton from "@/components/SubmitButton";
 
 export default async function LoginPage({
   searchParams,
@@ -16,19 +17,19 @@ export default async function LoginPage({
       </Link>
       <form action={login} className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl">
         <h1 className="mb-1 text-center font-display text-3xl text-fuchsia-700">Log in</h1>
-        <p className="mb-6 text-center text-sm text-stone-500">তোমার birthday site(গুলো) manage করো</p>
+        <p className="mb-6 text-center text-sm text-stone-500">Manage your birthday site(s)</p>
 
         {error && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
         )}
         {reset && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            পাসওয়ার্ড বদলানো হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগ ইন করো।
+            Your password has been changed. Log in with your new password.
           </p>
         )}
         {created && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            Account তৈরি হয়ে গেছে! এখন email আর password দিয়ে লগ ইন করো।
+            Account created! Log in with your email and password.
           </p>
         )}
 
@@ -38,15 +39,15 @@ export default async function LoginPage({
         <div className="mb-1 flex items-center justify-between">
           <label className="block text-sm font-medium text-stone-600">Password</label>
           <Link href="/forgot-password" className="text-xs font-medium text-fuchsia-600 hover:underline">
-            ভুলে গেছো?
+            Forgot password?
           </Link>
         </div>
         <input type="password" name="password" required className="input mb-6" />
 
-        <button type="submit" className="btn-primary w-full">Log in</button>
+        <SubmitButton pendingText="Logging in...">Log in</SubmitButton>
 
         <p className="mt-5 text-center text-sm text-stone-500">
-          অ্যাকাউন্ট নেই?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/signup" className="font-semibold text-fuchsia-600 underline">
             Sign up
           </Link>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { signup } from "@/lib/actions";
 import { SITE_TITLE } from "@/lib/brand";
+import SubmitButton from "@/components/SubmitButton";
 
 export default async function SignupPage({
   searchParams,
@@ -36,7 +37,7 @@ export default async function SignupPage({
         <label className="mb-1 block text-sm font-medium text-stone-600">Password</label>
         <input type="password" name="password" required minLength={6} className="input mb-6" />
 
-        <button type="submit" className="btn-primary w-full">Create account</button>
+        <SubmitButton pendingText="Creating account...">Create account</SubmitButton>
 
         <p className="mt-5 text-center text-sm text-stone-500">
           আগে থেকে অ্যাকাউন্ট আছে?{" "}

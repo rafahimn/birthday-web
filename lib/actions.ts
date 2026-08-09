@@ -15,8 +15,15 @@ export async function signup(formData: FormData) {
 
   const { error } = await supabase.auth.signUp({ email, password });
   if (error) {
-    const inviteQuery = invite ? `&invite=${encodeURIComponent(invite)}` : "";
-    redirect(`/signup?error=${encodeURIComponent(error.message)}${inviteQuery}`);
+    // Supabase returns this specific error only when it fails to send the
+    // confirmation email over SMTP — the user account itself is still
+    // created. Since this project uses admin-approval instead of email
+    // confirmation, that failed email doesn't matter — don't block signup on it.
+    const isHarmlessEmailError = /error sending confirmation email/i.test(error.message);
+    if (!isHarmlessEmailError) {
+      const inviteQuery = invite ? `&invite=${encodeURIComponent(invite)}` : "";
+      redirect(`/signup?error=${encodeURIComponent(error.message)}${inviteQuery}`);
+    }
   }
 
   // If they came through an admin-shared invite link, auto-approve the
