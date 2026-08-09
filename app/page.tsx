@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SITE_TITLE } from "@/lib/brand";
+import { getProfile } from "@/lib/data";
 
 const STEPS = [
   { title: "Sign up", desc: "একটা free account বানাও — email আর password দিয়ে, সেকেন্ডে হয়ে যায়।" },
@@ -7,16 +8,37 @@ const STEPS = [
   { title: "লিংক শেয়ার করো", desc: "নিজের একটা unique link পাবে (yoursite.com/s/tomar-link) — যে কাউকে পাঠাও, countdown থেকে শুরু হবে।" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const profile = await getProfile();
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-rose-50 via-fuchsia-50 to-amber-50">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <span className="font-display text-2xl text-fuchsia-700">{SITE_TITLE}</span>
+        <Link href="/" className="font-display text-2xl text-fuchsia-700">
+          {SITE_TITLE}
+        </Link>
         <nav className="flex items-center gap-3">
-          <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold text-fuchsia-700 hover:bg-white/60">
-            Log in
-          </Link>
-          <Link href="/signup" className="btn-primary text-sm">Sign up</Link>
+          {profile ? (
+            <>
+              <Link href="/dashboard" className="rounded-full px-4 py-2 text-sm font-semibold text-fuchsia-700 hover:bg-white/60">
+                Dashboard
+              </Link>
+              <Link
+                href="/dashboard/profile"
+                title="Profile"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-600 text-sm font-bold text-white shadow-sm hover:bg-fuchsia-700"
+              >
+                {profile.email.charAt(0).toUpperCase()}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold text-fuchsia-700 hover:bg-white/60">
+                Log in
+              </Link>
+              <Link href="/signup" className="btn-primary text-sm">Sign up</Link>
+            </>
+          )}
         </nav>
       </header>
 
