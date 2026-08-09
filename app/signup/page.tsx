@@ -40,14 +40,6 @@ export default async function SignupPage({
 
         <SubmitButton pendingText="Creating account...">Create account</SubmitButton>
 
-        <div className="my-5 flex items-center gap-3 text-xs text-stone-400">
-          <span className="h-px flex-1 bg-stone-200" />
-          or
-          <span className="h-px flex-1 bg-stone-200" />
-        </div>
-
-        <GoogleButton />
-
         <p className="mt-5 text-center text-sm text-stone-500">
           আগে থেকে অ্যাকাউন্ট আছে?{" "}
           <Link href="/login" className="font-semibold text-fuchsia-600 underline">
@@ -55,6 +47,16 @@ export default async function SignupPage({
           </Link>
         </p>
       </form>
+
+      <div className="my-5 flex w-full max-w-sm items-center gap-3 text-xs text-stone-400">
+        <span className="h-px flex-1 bg-stone-200" />
+        or
+        <span className="h-px flex-1 bg-stone-200" />
+      </div>
+
+      <div className="w-full max-w-sm">
+        <GoogleButton />
+      </div>
     </main>
   );
 }

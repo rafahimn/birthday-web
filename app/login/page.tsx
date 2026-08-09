@@ -26,7 +26,7 @@ export default async function LoginPage({
             {/invalid login credentials/i.test(error) && (
               <>
                 {" "}
-                যদি আগে Google দিয়ে সাইন ইন করে থাকো, নিচে &quot;Continue with Google&quot; দিয়ে ঢোকো।
+                If you signed in with Google before, use &quot;Continue with Google&quot; below.
               </>
             )}
           </p>
@@ -55,14 +55,6 @@ export default async function LoginPage({
 
         <SubmitButton pendingText="Logging in...">Log in</SubmitButton>
 
-        <div className="my-5 flex items-center gap-3 text-xs text-stone-400">
-          <span className="h-px flex-1 bg-stone-200" />
-          or
-          <span className="h-px flex-1 bg-stone-200" />
-        </div>
-
-        <GoogleButton />
-
         <p className="mt-5 text-center text-sm text-stone-500">
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="font-semibold text-fuchsia-600 underline">
@@ -70,6 +62,16 @@ export default async function LoginPage({
           </Link>
         </p>
       </form>
+
+      <div className="my-5 flex w-full max-w-sm items-center gap-3 text-xs text-stone-400">
+        <span className="h-px flex-1 bg-stone-200" />
+        or
+        <span className="h-px flex-1 bg-stone-200" />
+      </div>
+
+      <div className="w-full max-w-sm">
+        <GoogleButton />
+      </div>
     </main>
   );
 }
