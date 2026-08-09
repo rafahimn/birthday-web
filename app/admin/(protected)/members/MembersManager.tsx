@@ -1,8 +1,24 @@
 "use client";
 
 import { useTransition } from "react";
+import Image from "next/image";
 import { approveMember, unapproveMember, setAdminRole } from "@/lib/adminActions";
 import type { Profile } from "@/lib/types";
+
+function MemberAvatar({ member }: { member: Profile }) {
+  const initial = (member.full_name || member.email || "?").trim().charAt(0).toUpperCase();
+  return (
+    <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-fuchsia-100">
+      {member.avatar_url ? (
+        <Image src={member.avatar_url} alt="" fill className="object-cover" />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center text-sm font-bold text-fuchsia-500">
+          {initial}
+        </span>
+      )}
+    </span>
+  );
+}
 
 export default function MembersManager({ members }: { members: Profile[] }) {
   const [pending, startTransition] = useTransition();
@@ -22,9 +38,13 @@ export default function MembersManager({ members }: { members: Profile[] }) {
           <div className="space-y-3">
             {pendingMembers.map((m) => (
               <div key={m.id} className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
-                <div>
-                  <p className="font-medium text-stone-800">{m.email}</p>
-                  <p className="text-xs text-stone-400">Signed up: {new Date(m.created_at).toLocaleString()}</p>
+                <div className="flex items-center gap-3">
+                  <MemberAvatar member={m} />
+                  <div>
+                    <p className="font-medium text-stone-800">{m.full_name || m.email}</p>
+                    {m.full_name && <p className="text-xs text-stone-400">{m.email}</p>}
+                    <p className="text-xs text-stone-400">Signed up: {new Date(m.created_at).toLocaleString()}</p>
+                  </div>
                 </div>
                 <button
                   disabled={pending}
@@ -46,11 +66,16 @@ export default function MembersManager({ members }: { members: Profile[] }) {
         <div className="space-y-3">
           {approvedMembers.map((m) => (
             <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm">
-              <div>
-                <p className="font-medium text-stone-800">
-                  {m.email} {m.is_admin && <span className="ml-2 rounded-full bg-fuchsia-100 px-2 py-0.5 text-xs font-semibold text-fuchsia-700">Admin</span>}
-                </p>
-                <p className="text-xs text-stone-400">Signed up: {new Date(m.created_at).toLocaleString()}</p>
+              <div className="flex items-center gap-3">
+                <MemberAvatar member={m} />
+                <div>
+                  <p className="font-medium text-stone-800">
+                    {m.full_name || m.email}{" "}
+                    {m.is_admin && <span className="ml-2 rounded-full bg-fuchsia-100 px-2 py-0.5 text-xs font-semibold text-fuchsia-700">Admin</span>}
+                  </p>
+                  {m.full_name && <p className="text-xs text-stone-400">{m.email}</p>}
+                  <p className="text-xs text-stone-400">Signed up: {new Date(m.created_at).toLocaleString()}</p>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button

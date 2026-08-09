@@ -1,8 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/data";
 import { logout, updateOwnPassword, updateOwnEmail } from "@/lib/actions";
 import SubmitButton from "@/components/SubmitButton";
+import ProfileForm from "./ProfileForm";
 
 export default async function ProfilePage({
   searchParams,
@@ -12,6 +14,7 @@ export default async function ProfilePage({
   const profile = await getProfile();
   if (!profile) redirect("/login");
   const { error, updated, email_pending } = await searchParams;
+  const initial = (profile.full_name || profile.email || "?").trim().charAt(0).toUpperCase();
 
   return (
     <main className="min-h-screen bg-stone-50 px-6 py-10">
@@ -23,10 +26,34 @@ export default async function ProfilePage({
           </Link>
         </div>
 
+        {/* Facebook-style header: cover strip + big avatar + name */}
+        <div className="mb-6 overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div className="h-24 bg-gradient-to-r from-fuchsia-400 to-violet-400" />
+          <div className="flex flex-col items-center px-6 pb-6 text-center">
+            <div className="relative -mt-12 h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-fuchsia-100 shadow-md">
+              {profile.avatar_url ? (
+                <Image src={profile.avatar_url} alt="Profile picture" fill className="object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center font-display text-4xl text-fuchsia-500">
+                  {initial}
+                </span>
+              )}
+            </div>
+            <p className="mt-3 font-display text-xl text-stone-800">{profile.full_name || profile.email}</p>
+            <p className="text-sm text-stone-400">{profile.email}</p>
+            {profile.bio && <p className="mt-2 max-w-sm text-sm text-stone-500">{profile.bio}</p>}
+          </div>
+        </div>
+
         {error && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
         )}
-        {updated && (
+        {updated === "profile" && (
+          <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            Profile updated.
+          </p>
+        )}
+        {updated === "1" && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
             Password updated.
           </p>
@@ -49,8 +76,9 @@ export default async function ProfilePage({
                 Pending Admin Approval
               </span>
               <p className="mt-3 text-sm text-stone-500">
-                Your account hasn&apos;t been approved by an admin yet. You can&apos;t create or edit a site until
-                it&apos;s approved — you&apos;ll be able to from here as soon as it is.
+                You can see and set up your profile right away — you just can&apos;t create or edit a site until
+                an admin approves your account. That can take a little while; feel free to fill in your photo and
+                name in the meantime.
               </p>
             </div>
           )}
@@ -62,6 +90,10 @@ export default async function ProfilePage({
               </Link>
             </p>
           )}
+        </div>
+
+        <div className="mb-6">
+          <ProfileForm profile={profile} />
         </div>
 
         <form action={updateOwnEmail} className="mb-6 rounded-2xl bg-white p-6 shadow-sm">

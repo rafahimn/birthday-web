@@ -163,6 +163,35 @@ export async function updateOwnPassword(formData: FormData) {
   redirect("/dashboard/profile?updated=1");
 }
 
+/** Logged-in member updates their own name / avatar / bio from
+ *  /dashboard/profile. Works whether or not they're admin-approved yet —
+ *  approval only gates creating/editing sites, not the profile itself. */
+export async function updateOwnProfile(formData: FormData) {
+  const full_name = String(formData.get("full_name") ?? "").trim();
+  const avatar_url = String(formData.get("avatar_url") ?? "").trim();
+  const bio = String(formData.get("bio") ?? "").trim();
+
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) redirect("/login");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      full_name: full_name || null,
+      avatar_url: avatar_url || null,
+      bio: bio || null,
+    })
+    .eq("id", auth.user.id);
+  if (error) {
+    redirect(`/dashboard/profile?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard/profile");
+  revalidatePath("/dashboard");
+  redirect("/dashboard/profile?updated=profile");
+}
+
 /** Logged-in member changes their own login email (Supabase sends a confirmation
  *  to the new address before the change actually takes effect). */
 export async function updateOwnEmail(formData: FormData) {

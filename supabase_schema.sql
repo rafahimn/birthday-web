@@ -266,6 +266,69 @@ grant execute on function public.approve_via_invite(text) to authenticated;
 -- ============================================================
 
 -- ============================================================
+-- PROFILE: name, avatar, bio
+-- Members can fill these in from /dashboard/profile — viewable and
+-- editable as soon as they log in, whether or not an admin has
+-- approved them yet. `approved` still gates creating/editing sites
+-- (checked in lib/actions.ts), it does NOT gate the profile itself.
+-- ============================================================
+
+alter table profiles add column if not exists full_name text;
+alter table profiles add column if not exists avatar_url text;
+alter table profiles add column if not exists bio text;
+
+-- Google OAuth puts a name/photo in the new user's metadata — prefill
+-- the profile with it so Google sign-ins start with something, rather
+-- than a blank profile. (Password signups just get an empty profile,
+-- the same as before.)
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, full_name, avatar_url)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name'),
+    coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture')
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+-- Let a member update their own name/avatar/bio (email/password go
+-- through supabase.auth.updateUser instead, not this table).
+create policy "user updates own profile" on profiles for update
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
+
+-- Belt-and-suspenders: even though the app's own forms never submit
+-- is_admin/approved, this trigger makes sure a non-admin can never
+-- write those two columns on their own row — only /admin (which goes
+-- through public.is_admin()) can flip them.
+create or replace function public.prevent_profile_privilege_escalation()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    new.is_admin := old.is_admin;
+    new.approved := old.approved;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_profile_update_guard on profiles;
+create trigger on_profile_update_guard
+  before update on profiles
+  for each row execute procedure public.prevent_profile_privilege_escalation();
+
+-- ============================================================
 -- MIGRATING FROM THE OLD SINGLE-SITE SCHEMA
 -- If you previously ran the old schema (a single `site_settings` row
 -- + reasons/photos/videos with no site_id), do this once:
