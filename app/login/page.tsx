@@ -4,9 +4,9 @@ import { login } from "@/lib/actions";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; reset?: string }>;
+  searchParams: Promise<{ error?: string; reset?: string; created?: string }>;
 }) {
-  const { error, reset } = await searchParams;
+  const { error, reset, created } = await searchParams;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-rose-50 to-violet-50 px-4">
@@ -20,6 +20,11 @@ export default async function LoginPage({
         {reset && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
             পাসওয়ার্ড বদলানো হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগ ইন করো।
+          </p>
+        )}
+        {created && (
+          <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            Account তৈরি হয়ে গেছে! এখন email আর password দিয়ে লগ ইন করো।
           </p>
         )}
 

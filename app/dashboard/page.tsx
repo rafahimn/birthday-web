@@ -14,9 +14,14 @@ export default async function DashboardPage() {
           <p className="mb-6 text-sm text-stone-500">
             তোমার অ্যাকাউন্ট এখনো admin approve করেনি। Approve হলে এখান থেকেই site বানাতে পারবে।
           </p>
-          <form action={logout}>
-            <button className="text-sm font-medium text-stone-400 hover:text-red-500">Log out</button>
-          </form>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/dashboard/profile" className="text-sm font-semibold text-fuchsia-600 hover:underline">
+              Profile
+            </Link>
+            <form action={logout}>
+              <button className="text-sm font-medium text-stone-400 hover:text-red-500">Log out</button>
+            </form>
+          </div>
         </div>
       </main>
     );
@@ -35,6 +40,9 @@ export default async function DashboardPage() {
                 Admin Panel
               </Link>
             )}
+            <Link href="/dashboard/profile" className="text-sm font-semibold text-fuchsia-600 hover:underline">
+              Profile
+            </Link>
             <form action={logout}>
               <button className="text-sm font-medium text-stone-400 hover:text-red-500">Log out</button>
             </form>

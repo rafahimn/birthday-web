@@ -69,6 +69,17 @@ export async function setAdminRole(userId: string, isAdmin: boolean) {
   revalidatePath("/admin/members");
 }
 
+// ---------- Invite link ----------
+
+/** Rotates the shared invite token, so any old copied link stops working. */
+export async function regenerateInviteLink() {
+  const { supabase } = await requireAdminSupabase();
+  const newToken = crypto.randomUUID().replace(/-/g, "").slice(0, 18);
+  const { error } = await supabase.from("app_settings").update({ invite_token: newToken }).eq("id", 1);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/members");
+}
+
 // ---------- Sites (admin can touch any site) ----------
 
 export async function adminUpdateSiteContact(siteId: string, formData: FormData) {

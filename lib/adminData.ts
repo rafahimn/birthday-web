@@ -14,6 +14,16 @@ export async function requireAdmin(): Promise<Profile> {
   return profile as Profile;
 }
 
+/** Current invite-link token — sharing a signup link with this token
+ *  skips admin approval for whoever signs up through it. For /admin/members. */
+export async function getInviteToken(): Promise<string> {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("app_settings").select("invite_token").eq("id", 1).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.invite_token ?? "";
+}
+
 /** All members (profiles), newest first — for the /admin/members approval queue. */
 export async function getAllMembers(): Promise<Profile[]> {
   await requireAdmin();
@@ -24,8 +34,7 @@ export async function getAllMembers(): Promise<Profile[]> {
 }
 
 /** Every site across every member, with the owner's email attached — for /admin/sites. */
-export async function getAllSites(): Promise<SiteWithOwner[]> {
-  await requireAdmin();
+export async function getAllSites(): Promise<SiteWithOwner[]> {  await requireAdmin();
   const supabase = await createClient();
 
   const [sitesRes, profilesRes] = await Promise.all([

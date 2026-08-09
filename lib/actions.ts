@@ -10,13 +10,25 @@ import { createClient } from "@/lib/supabase/server";
 export async function signup(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
+  const invite = String(formData.get("invite") ?? "").trim();
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signUp({ email, password });
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+    const inviteQuery = invite ? `&invite=${encodeURIComponent(invite)}` : "";
+    redirect(`/signup?error=${encodeURIComponent(error.message)}${inviteQuery}`);
   }
-  redirect("/dashboard");
+
+  // If they came through an admin-shared invite link, auto-approve the
+  // account right now (works because signUp just signed them in).
+  if (invite) {
+    await supabase.rpc("approve_via_invite", { p_token: invite });
+  }
+
+  // Always require an explicit login afterwards, rather than leaving
+  // them auto-signed-in from signUp.
+  await supabase.auth.signOut();
+  redirect("/login?created=1");
 }
 
 export async function login(formData: FormData) {

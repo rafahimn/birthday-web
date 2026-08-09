@@ -214,6 +214,50 @@ create policy "admin full access sites" on sites for all
 -- ============================================================
 
 -- ============================================================
+-- INVITE LINK — sign up with no admin approval needed
+-- One shareable link (shown on /admin/members) lets anyone who has
+-- it create an account that's auto-approved. Everyone else who signs
+-- up the normal way still needs manual approval.
+-- ============================================================
+
+create table if not exists app_settings (
+  id int primary key default 1,
+  invite_token text not null default encode(gen_random_bytes(9), 'hex'),
+  constraint app_settings_singleton check (id = 1)
+);
+
+insert into app_settings (id) values (1) on conflict (id) do nothing;
+
+alter table app_settings enable row level security;
+
+create policy "admin full access app_settings" on app_settings for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- Called right after signup (from the signup form's invite link) to
+-- auto-approve the brand-new account if the token matches. Runs with
+-- elevated rights so a logged-out/just-signed-up user can call it
+-- without needing SELECT on app_settings directly.
+create or replace function public.approve_via_invite(p_token text)
+returns boolean
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_match boolean;
+begin
+  select (invite_token = p_token) into v_match from app_settings where id = 1;
+  if coalesce(v_match, false) then
+    update profiles set approved = true where id = auth.uid();
+    return true;
+  end if;
+  return false;
+end;
+$$;
+
+grant execute on function public.approve_via_invite(text) to authenticated;
+
+-- ============================================================
 -- Signups
 -- Members create their own account from /signup (Supabase Auth,
 -- email/password) — no manual user creation needed.

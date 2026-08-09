@@ -1,19 +1,31 @@
-# Supabase — Project Settings > API
-NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
-
-# Base URL used to build shareable links, e.g. https://yourdomain.com
-NEXT_PUBLIC_BASE_URL="https://eliteglobalstorewish.vercel.app"
-
-# Cloudinary — used for the "Upload" buttons in the editor (photos, videos,
-# audio). Create a free account at cloudinary.com, then:
-# 1. NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = your "Cloud name" (dashboard home page)
-# 2. Settings > Upload > Upload presets > Add upload preset > Signing Mode: "Unsigned" > save, then paste its name below
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET="your-unsigned-preset"
-
-# Resend — not used anywhere in the app code yet (the SMTP password you
-# already set in Supabase's dashboard is the only place this key is
-# actually wired up). Kept here only in case a future feature needs it
-# directly from code.
-RESEND_API_KEY="your-resend-api-key"
+{
+  "name": "birthday-site",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "canvas-confetti": "^1.9.3",
+    "framer-motion": "^11.5.4",
+    "next": "14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/canvas-confetti": "^1.6.4",
+    "@types/node": "^20.14.15",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.35",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,8 +1,11 @@
-import { getAllMembers } from "@/lib/adminData";
+import { headers } from "next/headers";
+import { getAllMembers, getInviteToken } from "@/lib/adminData";
 import MembersManager from "./MembersManager";
+import InviteLinkCard from "./InviteLinkCard";
 
 export default async function AdminMembersPage() {
-  const members = await getAllMembers();
+  const [members, token] = await Promise.all([getAllMembers(), getInviteToken()]);
+  const baseUrl = (await headers()).get("origin") ?? "";
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -10,6 +13,7 @@ export default async function AdminMembersPage() {
       <p className="mb-8 text-sm text-stone-500">
         নতুন signup approve করো, দরকার হলে suspend করো, চাইলে কাউকে admin বানাও।
       </p>
+      <InviteLinkCard baseUrl={baseUrl} token={token} />
       <MembersManager members={members} />
     </div>
   );
