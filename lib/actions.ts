@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 // ---------- Auth ----------
@@ -34,6 +35,50 @@ export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+// ---------- Forgot / reset password ----------
+
+/** Sends a password-reset email. Always redirects to the same "check your email" screen,
+ *  whether or not the email exists — this avoids leaking which emails have accounts. */
+export async function forgotPassword(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin");
+
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+  });
+
+  redirect("/forgot-password?sent=1");
+}
+
+/** Sets a new password. Only works right after clicking the emailed reset link,
+ *  which signs the user into a temporary recovery session via /auth/callback. */
+export async function resetPassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirm_password") ?? "");
+
+  if (password.length < 6) {
+    redirect(`/reset-password?error=${encodeURIComponent("পাসওয়ার্ড কমপক্ষে ৬ ক্যারেক্টার হতে হবে।")}`);
+  }
+  if (password !== confirmPassword) {
+    redirect(`/reset-password?error=${encodeURIComponent("দুইটা পাসওয়ার্ড মিলছে না।")}`);
+  }
+
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) {
+    redirect(`/forgot-password?error=${encodeURIComponent("লিংকটার মেয়াদ শেষ হয়ে গেছে, আবার চেষ্টা করো।")}`);
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    redirect(`/reset-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  await supabase.auth.signOut();
+  redirect("/login?reset=1");
 }
 
 // ---------- Ownership helper ----------
