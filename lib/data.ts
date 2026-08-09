@@ -53,7 +53,18 @@ export async function getSiteForOwner(siteId: string): Promise<SiteData | null> 
   if (!auth.user) return null;
 
   const { data: site } = await supabase.from("sites").select("*").eq("id", siteId).maybeSingle();
-  if (!site || site.owner_id !== auth.user.id) return null;
+  if (!site) return null;
+
+  if (site.owner_id !== auth.user.id) {
+    // Not the owner — allow through only if the current user is an admin,
+    // so /admin can open the exact same full editor for any member's site.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    if (!profile?.is_admin) return null;
+  }
 
   const [reasonsRes, photosRes, videosRes] = await Promise.all([
     supabase.from("reasons").select("*").eq("site_id", siteId).order("order_index", { ascending: true }),

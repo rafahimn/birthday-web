@@ -101,7 +101,18 @@ async function requireOwnedSite(siteId: string) {
   if (!auth.user) throw new Error("Not signed in");
 
   const { data: site } = await supabase.from("sites").select("id, owner_id").eq("id", siteId).maybeSingle();
-  if (!site || site.owner_id !== auth.user.id) throw new Error("Site not found");
+  if (!site) throw new Error("Site not found");
+
+  if (site.owner_id !== auth.user.id) {
+    // Not the owner — allow through only if the current user is an admin,
+    // so /admin's "Full editor" link can edit any member's site content.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    if (!profile?.is_admin) throw new Error("Site not found");
+  }
 
   return { supabase, userId: auth.user.id };
 }

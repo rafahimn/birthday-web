@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { login } from "@/lib/actions";
+import { SITE_TITLE } from "@/lib/brand";
 
 export default async function LoginPage({
   searchParams,
@@ -9,7 +10,10 @@ export default async function LoginPage({
   const { error, reset, created } = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-rose-50 to-violet-50 px-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-rose-50 to-violet-50 px-4">
+      <Link href="/" className="mb-6 font-display text-2xl text-fuchsia-700">
+        {SITE_TITLE}
+      </Link>
       <form action={login} className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl">
         <h1 className="mb-1 text-center font-display text-3xl text-fuchsia-700">Log in</h1>
         <p className="mb-6 text-center text-sm text-stone-500">তোমার birthday site(গুলো) manage করো</p>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SITE_TITLE } from "@/lib/brand";
 
 const STEPS = [
   { title: "Sign up", desc: "একটা free account বানাও — email আর password দিয়ে, সেকেন্ডে হয়ে যায়।" },
@@ -10,7 +11,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-rose-50 via-fuchsia-50 to-amber-50">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <span className="font-display text-2xl text-fuchsia-700">A Little Surprise 💫</span>
+        <span className="font-display text-2xl text-fuchsia-700">{SITE_TITLE}</span>
         <nav className="flex items-center gap-3">
           <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold text-fuchsia-700 hover:bg-white/60">
             Log in

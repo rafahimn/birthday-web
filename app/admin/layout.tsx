@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/adminData";
 import { adminLogout } from "@/lib/adminActions";
+import { SITE_TITLE } from "@/lib/brand";
 
 const NAV = [
   { href: "/admin/members", label: "Members" },
@@ -15,6 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-stone-50">
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside className="border-b border-stone-200 bg-stone-900 p-4 md:w-64 md:border-b-0 md:border-r">
+          <p className="mb-1 text-sm font-semibold text-fuchsia-400">{SITE_TITLE}</p>
           <h2 className="mb-1 px-0 font-display text-2xl text-white">Admin Panel</h2>
           <p className="mb-6 truncate text-xs text-stone-400">{admin.email}</p>
           <nav className="flex flex-row flex-wrap gap-1 md:flex-col">
@@ -28,7 +30,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </Link>
             ))}
           </nav>
-          <form action={adminLogout} className="mt-6 px-2">
+          <Link href="/dashboard" className="mt-6 block px-2 text-sm font-medium text-stone-400 hover:text-white">
+            ← আমার Dashboard
+          </Link>
+          <form action={adminLogout} className="mt-2 px-2">
             <button className="text-sm font-medium text-stone-400 hover:text-red-400">Log out</button>
           </form>
         </aside>

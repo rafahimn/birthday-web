@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getUserSites, getProfile, getActiveTemplates } from "@/lib/data";
 import { logout } from "@/lib/actions";
+import { SITE_TITLE } from "@/lib/brand";
 import CreateSiteForm from "./CreateSiteForm";
 
 export default async function DashboardPage() {
@@ -32,6 +33,9 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-screen bg-stone-50 px-6 py-10">
       <div className="mx-auto max-w-4xl">
+        <Link href="/" className="mb-6 inline-block font-display text-xl text-fuchsia-700">
+          {SITE_TITLE}
+        </Link>
         <div className="mb-8 flex items-center justify-between">
           <h1 className="font-display text-3xl text-fuchsia-700">তোমার Sites</h1>
           <div className="flex items-center gap-4">
