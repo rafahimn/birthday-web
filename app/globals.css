@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+:root {
+  --blush: #ffd1dc;
+  --lavender: #e6e6fa;
+  --gold: #e8b84b;
+  --plum: #6b2f5a;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body), sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), cursive;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translate(0, 110vh) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(var(--drift, 0px), -10vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.floating-item {
+  position: absolute;
+  bottom: 0;
+  animation-name: floatUp;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+}
+
+@keyframes flicker {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0.75;
+    transform: scale(1.12);
+  }
+}
+
+.candle-flame {
+  animation: flicker 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes gentleBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-gentle-bounce {
+  animation: gentleBounce 2s ease-in-out infinite;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--blush);
+  border-radius: 999px;
+}
+
+/* Shared admin form controls */
+.input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #e7e5e4;
+  padding: 0.5rem 0.9rem;
+  outline: none;
+}
+.input:focus {
+  border-color: #d946ef;
+}
+.btn-primary {
+  border-radius: 999px;
+  background: linear-gradient(to right, #d946ef, #8b5cf6);
+  color: white;
+  font-weight: 700;
+  padding: 0.6rem 1.6rem;
+  box-shadow: 0 6px 16px rgba(217, 70, 239, 0.25);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+}
+.btn-danger {
+  border-radius: 999px;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  font-weight: 600;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+}
+.btn-danger:hover {
+  background: #fef2f2;
+}
