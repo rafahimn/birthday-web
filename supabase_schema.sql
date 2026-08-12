@@ -1,26 +1,24 @@
 -- ============================================================
--- Birthday Site Builder — Multi-tenant Supabase Schema
--- Run this once in Supabase SQL Editor (SQL Editor -> New query)
+-- Birthday Surprise Site — Supabase Schema
+-- Run this once in Supabase SQL Editor
 -- ============================================================
 
--- One row per birthday site. Each site belongs to one member (owner_id).
-create table if not exists sites (
-  id uuid primary key default gen_random_uuid(),
-  owner_id uuid not null references auth.users(id) on delete cascade,
-  slug text not null unique,
-  recipient_name text not null default 'Your Person',
+-- One-row table holding all "global" settings (name, age, countdown target, texts, links)
+create table if not exists site_settings (
+  id int primary key default 1,
+  recipient_name text not null default 'Natu..',
   age int not null default 18,
-  birthday_month int not null default 0,       -- 0 = January ... 11 = December
-  birthday_day int not null default 1,
-  birthday_hour int not null default 0,          -- 24h format
-  birthday_minute int not null default 0,
-  greeting_text text not null default 'Happy Birthday! You mean the world to me 💖',
-  cake_title text not null default 'Happy Birthday! 🎂',
-  letter_title text not null default 'A Letter for You 💌',
-  letter_content text not null default 'Write something special here...',
+  birthday_month int not null default 6,      -- 0 = January ... 11 = December
+  birthday_day int not null default 6,
+  birthday_hour int not null default 21,      -- 24h format
+  birthday_minute int not null default 30,
+  greeting_text text not null default 'Hey You Know What! You''re the most adorable human i ever met! 💖',
+  cake_title text not null default 'Happy Birthday Sweety❤️🎂',
+  letter_title text not null default 'A Letter for You Babiee 💌',
+  letter_content text not null default 'Every laugh, every chat, and every moment we''ve shared has been truly special.💫',
   secret_photo_url text,
-  secret_button_label text not null default 'See more',
-  secret_button_link text,
+  secret_button_label text not null default 'See Your Friend',
+  secret_button_link text default 'https://www.instagram.com/',
   facebook_url text,
   instagram_url text,
   countdown_audio_url text,
@@ -30,28 +28,35 @@ create table if not exists sites (
   emailjs_public_key text,
   emailjs_service_id text,
   emailjs_template_id text,
-  published boolean not null default true,
-  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint slug_format check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')
+  constraint single_row check (id = 1)
 );
 
-create index if not exists sites_owner_id_idx on sites(owner_id);
+insert into site_settings (id) values (1) on conflict (id) do nothing;
 
--- Reasons shown on the "reasons" screen (per site)
+-- ------------------------------------------------------------
+-- Migration: if you already ran this schema before (older
+-- version without the Contact fields), run just this block once
+-- in the SQL Editor to add the new columns without losing data.
+-- ------------------------------------------------------------
+alter table site_settings add column if not exists contact_email text;
+alter table site_settings add column if not exists whatsapp_url text;
+alter table site_settings add column if not exists emailjs_public_key text;
+alter table site_settings add column if not exists emailjs_service_id text;
+alter table site_settings add column if not exists emailjs_template_id text;
+
+-- Reasons shown on the "reasons" screen
 create table if not exists reasons (
   id uuid primary key default gen_random_uuid(),
-  site_id uuid not null references sites(id) on delete cascade,
   text text not null,
   emoji text not null default '💖',
   order_index int not null default 0,
   created_at timestamptz not null default now()
 );
 
--- Photo gallery (per site)
+-- Photo gallery
 create table if not exists photos (
   id uuid primary key default gen_random_uuid(),
-  site_id uuid not null references sites(id) on delete cascade,
   image_url text not null,
   title text not null default '',
   caption text not null default '',
@@ -59,10 +64,9 @@ create table if not exists photos (
   created_at timestamptz not null default now()
 );
 
--- Video messages (per site)
+-- Video messages
 create table if not exists videos (
   id uuid primary key default gen_random_uuid(),
-  site_id uuid not null references sites(id) on delete cascade,
   video_url text not null,
   poster_url text,
   title text not null default '',
@@ -70,79 +74,31 @@ create table if not exists videos (
   created_at timestamptz not null default now()
 );
 
-create index if not exists reasons_site_id_idx on reasons(site_id);
-create index if not exists photos_site_id_idx on photos(site_id);
-create index if not exists videos_site_id_idx on videos(site_id);
-
 -- ============================================================
 -- Row Level Security
--- - Owner (auth.uid() = sites.owner_id) has full read/write on their
---   own sites and everything under them (reasons/photos/videos).
--- - Anyone (including logged-out visitors) can READ a site — and its
---   reasons/photos/videos — only if that site is published. This is
---   what makes the public share link (/s/[slug]) work without login.
+-- Public (anon) can only READ. Only authenticated users (admin) can write.
 -- ============================================================
-alter table sites enable row level security;
+alter table site_settings enable row level security;
 alter table reasons enable row level security;
 alter table photos enable row level security;
 alter table videos enable row level security;
 
-create policy "owner full access sites" on sites for all
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+create policy "public read settings" on site_settings for select using (true);
+create policy "auth write settings" on site_settings for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-create policy "public read published sites" on sites for select
-  using (published = true);
+create policy "public read reasons" on reasons for select using (true);
+create policy "auth write reasons" on reasons for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-create policy "owner full access reasons" on reasons for all
-  using (exists (select 1 from sites where sites.id = reasons.site_id and sites.owner_id = auth.uid()))
-  with check (exists (select 1 from sites where sites.id = reasons.site_id and sites.owner_id = auth.uid()));
+create policy "public read photos" on photos for select using (true);
+create policy "auth write photos" on photos for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-create policy "public read reasons of published sites" on reasons for select
-  using (exists (select 1 from sites where sites.id = reasons.site_id and sites.published = true));
-
-create policy "owner full access photos" on photos for all
-  using (exists (select 1 from sites where sites.id = photos.site_id and sites.owner_id = auth.uid()))
-  with check (exists (select 1 from sites where sites.id = photos.site_id and sites.owner_id = auth.uid()));
-
-create policy "public read photos of published sites" on photos for select
-  using (exists (select 1 from sites where sites.id = photos.site_id and sites.published = true));
-
-create policy "owner full access videos" on videos for all
-  using (exists (select 1 from sites where sites.id = videos.site_id and sites.owner_id = auth.uid()))
-  with check (exists (select 1 from sites where sites.id = videos.site_id and sites.owner_id = auth.uid()));
-
-create policy "public read videos of published sites" on videos for select
-  using (exists (select 1 from sites where sites.id = videos.site_id and sites.published = true));
+create policy "public read videos" on videos for select using (true);
+create policy "auth write videos" on videos for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
 -- ============================================================
--- Signups
--- Members create their own account from /signup (Supabase Auth,
--- email/password) — no manual user creation needed.
--- Authentication -> Providers -> Email -> "Allow new users to sign up"
--- should stay ON for this multi-tenant version.
--- ============================================================
-
--- ============================================================
--- MIGRATING FROM THE OLD SINGLE-SITE SCHEMA
--- If you previously ran the old schema (a single `site_settings` row
--- + reasons/photos/videos with no site_id), do this once:
---
--- 1. Run everything above to create the new tables.
--- 2. Create your own account at /signup, note your user id
---    (Authentication -> Users -> copy the UUID).
--- 3. Insert one `sites` row using your old site_settings values,
---    with owner_id = your UUID and a slug of your choice, e.g.:
---
---    insert into sites (owner_id, slug, recipient_name, age, ...)
---    select 'YOUR-USER-UUID', 'my-first-site', recipient_name, age, ...
---    from site_settings where id = 1;
---
--- 4. For old reasons/photos/videos, add a site_id column pointing at
---    the new site's id, e.g.:
---    update reasons set site_id = 'NEW-SITE-UUID';  (repeat for photos, videos)
---    -- then add the not-null + FK constraint, or just re-add the
---    -- rows manually from the admin panel — for a handful of rows
---    -- that's often simpler than a migration script.
--- 5. Once confirmed, drop the old `site_settings` table.
+-- After running this:
+-- 1. Go to Authentication -> Users in Supabase and create ONE user
+--    (your email + password) — this is the admin login.
+-- 2. Disable public sign-ups: Authentication -> Providers -> Email ->
+--    turn OFF "Allow new users to sign up".
 -- ============================================================

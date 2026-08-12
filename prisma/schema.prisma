@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  sites     Site[]
+}
+
+model Site {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  // Full site configuration (colors, names, dates, photos, videos, reasons,
+  // letter text, social links, etc) stored as JSON so new fields can be
+  // added later without a schema migration.
+  config    String
+  published Boolean  @default(true)
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,7 +1,5 @@
-export interface Site {
-  id: string;
-  owner_id: string;
-  slug: string;
+export interface SiteSettings {
+  id: number;
   recipient_name: string;
   age: number;
   birthday_month: number;
@@ -24,19 +22,11 @@ export interface Site {
   emailjs_public_key: string | null;
   emailjs_service_id: string | null;
   emailjs_template_id: string | null;
-  published: boolean;
-  created_at: string;
   updated_at: string;
 }
 
-// Kept as an alias so the existing BirthdayExperience / form components
-// (written against the old single-tenant "settings" shape) don't need to
-// change — a Site already has every field SiteSettings had.
-export type SiteSettings = Site;
-
 export interface Reason {
   id: string;
-  site_id: string;
   text: string;
   emoji: string;
   order_index: number;
@@ -45,7 +35,6 @@ export interface Reason {
 
 export interface Photo {
   id: string;
-  site_id: string;
   image_url: string;
   title: string;
   caption: string;
@@ -55,7 +44,6 @@ export interface Photo {
 
 export interface VideoItem {
   id: string;
-  site_id: string;
   video_url: string;
   poster_url: string | null;
   title: string;
@@ -64,7 +52,7 @@ export interface VideoItem {
 }
 
 export interface SiteData {
-  settings: Site;
+  settings: SiteSettings;
   reasons: Reason[];
   photos: Photo[];
   videos: VideoItem[];

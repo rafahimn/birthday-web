@@ -28,19 +28,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
-  const isDashboardRoute = pathname.startsWith("/dashboard");
-  const isAuthRoute = pathname === "/login" || pathname === "/signup";
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  const isLoginRoute = request.nextUrl.pathname === "/admin/login";
 
-  if (isDashboardRoute && !user) {
+  if (isAdminRoute && !isLoginRoute && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/admin/login";
     return NextResponse.redirect(url);
   }
 
-  if (isAuthRoute && user) {
+  if (isLoginRoute && user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/admin";
     return NextResponse.redirect(url);
   }
 
