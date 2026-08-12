@@ -1,45 +1,106 @@
 import { createClient } from "@/lib/supabase/server";
-import type { SiteData, SiteSettings } from "@/lib/types";
+import type { Site, SiteData, Profile, Template } from "@/lib/types";
 
-const DEFAULT_SETTINGS: SiteSettings = {
-  id: 1,
-  recipient_name: "Natu..",
-  age: 18,
-  birthday_month: 6,
-  birthday_day: 6,
-  birthday_hour: 21,
-  birthday_minute: 30,
-  greeting_text: "Hey You Know What! You're the most adorable human i ever met! 💖",
-  cake_title: "Happy Birthday Sweety❤️🎂",
-  letter_title: "A Letter for You Babiee 💌",
-  letter_content: "Every laugh, every chat, and every moment we've shared has been truly special.💫",
-  secret_photo_url: null,
-  secret_button_label: "See Your Friend",
-  secret_button_link: null,
-  facebook_url: null,
-  instagram_url: null,
-  countdown_audio_url: null,
-  birthday_audio_url: null,
-  contact_email: null,
-  whatsapp_url: null,
-  emailjs_public_key: null,
-  emailjs_service_id: null,
-  emailjs_template_id: null,
-  updated_at: new Date().toISOString(),
-};
-
-export async function getSiteData(): Promise<SiteData> {
+/** Current logged-in user's profile row (approval + admin role). Null if logged out. */
+export async function getProfile(): Promise<Profile | null> {
   const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return null;
 
-  const [settingsRes, reasonsRes, photosRes, videosRes] = await Promise.all([
-    supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
-    supabase.from("reasons").select("*").order("order_index", { ascending: true }),
-    supabase.from("photos").select("*").order("order_index", { ascending: true }),
-    supabase.from("videos").select("*").order("order_index", { ascending: true }),
+  const { data } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
+  return (data as Profile) ?? null;
+}
+
+/** Active templates a member can pick from when creating a new site. */
+export async function getActiveTemplates(): Promise<Template[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("templates")
+    .select("*")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/** All sites owned by the currently logged-in member (dashboard list). */
+export async function getUserSites(): Promise<Site[]> {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return [];
+
+  const { data, error } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("owner_id", auth.user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/**
+ * A single site + its reasons/photos/videos, for the owner's dashboard
+ * editor. Returns null if the site doesn't exist OR the current user
+ * doesn't own it (checked explicitly, on top of RLS, so a logged-in
+ * user can never see another member's editor — RLS's public-read-if-
+ * published policy is for the /s/[slug] page, not this one).
+ */
+export async function getSiteForOwner(siteId: string): Promise<SiteData | null> {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return null;
+
+  const { data: site } = await supabase.from("sites").select("*").eq("id", siteId).maybeSingle();
+  if (!site) return null;
+
+  if (site.owner_id !== auth.user.id) {
+    // Not the owner — allow through only if the current user is an admin,
+    // so /admin can open the exact same full editor for any member's site.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    if (!profile?.is_admin) return null;
+  }
+
+  const [reasonsRes, photosRes, videosRes] = await Promise.all([
+    supabase.from("reasons").select("*").eq("site_id", siteId).order("order_index", { ascending: true }),
+    supabase.from("photos").select("*").eq("site_id", siteId).order("order_index", { ascending: true }),
+    supabase.from("videos").select("*").eq("site_id", siteId).order("order_index", { ascending: true }),
   ]);
 
   return {
-    settings: (settingsRes.data as SiteSettings) ?? DEFAULT_SETTINGS,
+    settings: site as Site,
+    reasons: reasonsRes.data ?? [],
+    photos: photosRes.data ?? [],
+    videos: videosRes.data ?? [],
+  };
+}
+
+/** Public lookup by slug, for the shareable /s/[slug] page. Unpublished -> null. */
+export async function getSiteBySlug(slug: string): Promise<SiteData | null> {
+  const supabase = await createClient();
+
+  const { data: site } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("slug", slug)
+    .eq("published", true)
+    .maybeSingle();
+
+  if (!site) return null;
+
+  const [reasonsRes, photosRes, videosRes] = await Promise.all([
+    supabase.from("reasons").select("*").eq("site_id", site.id).order("order_index", { ascending: true }),
+    supabase.from("photos").select("*").eq("site_id", site.id).order("order_index", { ascending: true }),
+    supabase.from("videos").select("*").eq("site_id", site.id).order("order_index", { ascending: true }),
+  ]);
+
+  return {
+    settings: site as Site,
     reasons: reasonsRes.data ?? [],
     photos: photosRes.data ?? [],
     videos: videosRes.data ?? [],

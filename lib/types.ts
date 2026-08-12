@@ -1,5 +1,32 @@
-export interface SiteSettings {
-  id: number;
+export interface Profile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  is_admin: boolean;
+  approved: boolean;
+  created_at: string;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  thumbnail_url: string | null;
+  greeting_text: string;
+  cake_title: string;
+  letter_title: string;
+  letter_content: string;
+  secret_button_label: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Site {
+  id: string;
+  owner_id: string;
+  template_id: string | null;
+  slug: string;
   recipient_name: string;
   age: number;
   birthday_month: number;
@@ -22,11 +49,19 @@ export interface SiteSettings {
   emailjs_public_key: string | null;
   emailjs_service_id: string | null;
   emailjs_template_id: string | null;
+  published: boolean;
+  created_at: string;
   updated_at: string;
 }
 
+// Kept as an alias so the existing BirthdayExperience / form components
+// (written against the old single-tenant "settings" shape) don't need to
+// change — a Site already has every field SiteSettings had.
+export type SiteSettings = Site;
+
 export interface Reason {
   id: string;
+  site_id: string;
   text: string;
   emoji: string;
   order_index: number;
@@ -35,6 +70,7 @@ export interface Reason {
 
 export interface Photo {
   id: string;
+  site_id: string;
   image_url: string;
   title: string;
   caption: string;
@@ -44,6 +80,7 @@ export interface Photo {
 
 export interface VideoItem {
   id: string;
+  site_id: string;
   video_url: string;
   poster_url: string | null;
   title: string;
@@ -52,8 +89,11 @@ export interface VideoItem {
 }
 
 export interface SiteData {
-  settings: SiteSettings;
+  settings: Site;
   reasons: Reason[];
   photos: Photo[];
   videos: VideoItem[];
 }
+
+// Site row + the owner's email, for the admin sites list.
+export type SiteWithOwner = Site & { owner_email: string | null };

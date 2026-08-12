@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Dancing_Script, Quicksand } from "next/font/google";
+import { SITE_TITLE } from "@/lib/brand";
 import "./globals.css";
 
 const display = Dancing_Script({
@@ -15,7 +16,7 @@ const body = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: "A Little Surprise 💫",
+  title: SITE_TITLE,
   description: "Something special, made just for you.",
 };
 
