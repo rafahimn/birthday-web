@@ -12,7 +12,6 @@ export function getDemoData(): SiteData {
     settings: {
       id: "demo",
       owner_id: "demo",
-      template_id: null,
       slug: "demo",
       recipient_name: "Demo",
       age: 20,

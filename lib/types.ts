@@ -1,31 +1,6 @@
-export interface Profile {
-  id: string;
-  email: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  is_admin: boolean;
-  approved: boolean;
-  created_at: string;
-}
-
-export interface Template {
-  id: string;
-  name: string;
-  thumbnail_url: string | null;
-  greeting_text: string;
-  cake_title: string;
-  letter_title: string;
-  letter_content: string;
-  secret_button_label: string;
-  is_active: boolean;
-  created_at: string;
-}
-
 export interface Site {
   id: string;
   owner_id: string;
-  template_id: string | null;
   slug: string;
   recipient_name: string;
   age: number;
@@ -94,6 +69,3 @@ export interface SiteData {
   photos: Photo[];
   videos: VideoItem[];
 }
-
-// Site row + the owner's email, for the admin sites list.
-export type SiteWithOwner = Site & { owner_email: string | null };

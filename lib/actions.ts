@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 // ---------- Auth ----------
@@ -10,69 +9,13 @@ import { createClient } from "@/lib/supabase/server";
 export async function signup(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
-  const invite = String(formData.get("invite") ?? "").trim();
-  const inviteQuery = invite ? `&invite=${encodeURIComponent(invite)}` : "";
   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { error } = await supabase.auth.signUp({ email, password });
   if (error) {
-    // Supabase returns this specific error only when it fails to send the
-    // confirmation email over SMTP — the user account itself is still
-    // created. Since this project uses admin-approval instead of email
-    // confirmation, that failed email doesn't matter — don't block signup on it.
-    const isHarmlessEmailError = /error sending confirmation email/i.test(error.message);
-    if (!isHarmlessEmailError) {
-      redirect(`/signup?error=${encodeURIComponent(error.message)}${inviteQuery}`);
-    }
+    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
   }
-
-  // Supabase doesn't return an error when the email is already registered
-  // (e.g. someone already signed up/logged in with this Gmail address via
-  // "Continue with Google") — it silently no-ops instead, to avoid leaking
-  // which emails have accounts. The tell is an empty `identities` array.
-  // Without this check, the person thinks they created a new password
-  // account, but no password was ever set, so their next login attempt
-  // fails with "Invalid login credentials".
-  if (data?.user && data.user.identities && data.user.identities.length === 0) {
-    redirect(
-      `/signup?error=${encodeURIComponent(
-        "এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে। Log in করো — যদি আগে Google দিয়ে সাইন ইন করে থাকো, 'Continue with Google' ব্যবহার করো।"
-      )}${inviteQuery}`
-    );
-  }
-
-  // If they came through an admin-shared invite link, auto-approve the
-  // account right now (works because signUp just signed them in).
-  if (invite) {
-    await supabase.rpc("approve_via_invite", { p_token: invite });
-  }
-
-  // Always require an explicit login afterwards, rather than leaving
-  // them auto-signed-in from signUp.
-  await supabase.auth.signOut();
-  redirect("/login?created=1");
-}
-
-/** Kicks off Google OAuth. Supabase redirects the browser to Google, then
- *  back to /auth/callback (which exchanges the code for a session and
- *  sends the user on to /dashboard). Requires the Google provider to be
- *  enabled in Supabase Auth settings with a Client ID/Secret configured. */
-export async function signInWithGoogle() {
-  const supabase = await createClient();
-  const origin = (await headers()).get("origin");
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${origin}/auth/callback?next=/dashboard`,
-    },
-  });
-
-  if (error || !data?.url) {
-    redirect(`/login?error=${encodeURIComponent(error?.message ?? "Google দিয়ে লগইন করা যায়নি।")}`);
-  }
-
-  redirect(data.url);
+  redirect("/dashboard");
 }
 
 export async function login(formData: FormData) {
@@ -93,124 +36,7 @@ export async function logout() {
   redirect("/login");
 }
 
-// ---------- Forgot / reset password ----------
-
-/** Sends a password-reset email. Always redirects to the same "check your email" screen,
- *  whether or not the email exists — this avoids leaking which emails have accounts. */
-export async function forgotPassword(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  const supabase = await createClient();
-  const origin = (await headers()).get("origin");
-
-  await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=/reset-password`,
-  });
-
-  redirect("/forgot-password?sent=1");
-}
-
-/** Sets a new password. Only works right after clicking the emailed reset link,
- *  which signs the user into a temporary recovery session via /auth/callback. */
-export async function resetPassword(formData: FormData) {
-  const password = String(formData.get("password") ?? "");
-  const confirmPassword = String(formData.get("confirm_password") ?? "");
-
-  if (password.length < 6) {
-    redirect(`/reset-password?error=${encodeURIComponent("পাসওয়ার্ড কমপক্ষে ৬ ক্যারেক্টার হতে হবে।")}`);
-  }
-  if (password !== confirmPassword) {
-    redirect(`/reset-password?error=${encodeURIComponent("দুইটা পাসওয়ার্ড মিলছে না।")}`);
-  }
-
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) {
-    redirect(`/forgot-password?error=${encodeURIComponent("লিংকটার মেয়াদ শেষ হয়ে গেছে, আবার চেষ্টা করো।")}`);
-  }
-
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) {
-    redirect(`/reset-password?error=${encodeURIComponent(error.message)}`);
-  }
-
-  await supabase.auth.signOut();
-  redirect("/login?reset=1");
-}
-
-// ---------- Member profile self-service ----------
-
-/** Logged-in member updates their own password from /dashboard/profile. */
-export async function updateOwnPassword(formData: FormData) {
-  const password = String(formData.get("password") ?? "");
-  const confirmPassword = String(formData.get("confirm_password") ?? "");
-
-  if (password.length < 6) {
-    redirect(`/dashboard/profile?error=${encodeURIComponent("Password must be at least 6 characters.")}`);
-  }
-  if (password !== confirmPassword) {
-    redirect(`/dashboard/profile?error=${encodeURIComponent("Passwords don't match.")}`);
-  }
-
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/login");
-
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) {
-    redirect(`/dashboard/profile?error=${encodeURIComponent(error.message)}`);
-  }
-
-  redirect("/dashboard/profile?updated=1");
-}
-
-/** Logged-in member updates their own name / avatar / bio from
- *  /dashboard/profile. Works whether or not they're admin-approved yet —
- *  approval only gates creating/editing sites, not the profile itself. */
-export async function updateOwnProfile(formData: FormData) {
-  const full_name = String(formData.get("full_name") ?? "").trim();
-  const avatar_url = String(formData.get("avatar_url") ?? "").trim();
-  const bio = String(formData.get("bio") ?? "").trim();
-
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/login");
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      full_name: full_name || null,
-      avatar_url: avatar_url || null,
-      bio: bio || null,
-    })
-    .eq("id", auth.user.id);
-  if (error) {
-    redirect(`/dashboard/profile?error=${encodeURIComponent(error.message)}`);
-  }
-
-  revalidatePath("/dashboard/profile");
-  revalidatePath("/dashboard");
-  redirect("/dashboard/profile?updated=profile");
-}
-
-/** Logged-in member changes their own login email (Supabase sends a confirmation
- *  to the new address before the change actually takes effect). */
-export async function updateOwnEmail(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  if (!email) {
-    redirect(`/dashboard/profile?error=${encodeURIComponent("Enter a valid email.")}`);
-  }
-
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/login");
-
-  const { error } = await supabase.auth.updateUser({ email });
-  if (error) {
-    redirect(`/dashboard/profile?error=${encodeURIComponent(error.message)}`);
-  }
-
-  redirect("/dashboard/profile?email_pending=1");
-}
+// ---------- Ownership helper ----------
 
 async function requireOwnedSite(siteId: string) {
   const supabase = await createClient();
@@ -218,18 +44,7 @@ async function requireOwnedSite(siteId: string) {
   if (!auth.user) throw new Error("Not signed in");
 
   const { data: site } = await supabase.from("sites").select("id, owner_id").eq("id", siteId).maybeSingle();
-  if (!site) throw new Error("Site not found");
-
-  if (site.owner_id !== auth.user.id) {
-    // Not the owner — allow through only if the current user is an admin,
-    // so /admin's "Full editor" link can edit any member's site content.
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", auth.user.id)
-      .maybeSingle();
-    if (!profile?.is_admin) throw new Error("Site not found");
-  }
+  if (!site || site.owner_id !== auth.user.id) throw new Error("Site not found");
 
   return { supabase, userId: auth.user.id };
 }
@@ -250,19 +65,9 @@ export async function createSite(formData: FormData) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("approved")
-    .eq("id", auth.user.id)
-    .maybeSingle();
-  if (!profile?.approved) {
-    throw new Error("তোমার অ্যাকাউন্ট এখনো admin approve করেনি — approve হওয়া পর্যন্ত অপেক্ষা করো।");
-  }
-
   const recipientName = String(formData.get("recipient_name") ?? "").trim() || "Your Person";
   const requestedSlug = String(formData.get("slug") ?? "").trim();
   const base = slugify(requestedSlug || recipientName);
-  const templateId = String(formData.get("template_id") ?? "").trim() || null;
 
   // Ensure the slug is unique by appending a short suffix if needed.
   let slug = base;
@@ -272,27 +77,13 @@ export async function createSite(formData: FormData) {
     slug = `${base}-${Math.random().toString(36).slice(2, 6)}`;
   }
 
-  const insertPayload: Record<string, unknown> = {
-    owner_id: auth.user!.id,
-    slug,
-    recipient_name: recipientName,
-  };
-
-  if (templateId) {
-    const { data: template } = await supabase.from("templates").select("*").eq("id", templateId).maybeSingle();
-    if (template) {
-      insertPayload.template_id = template.id;
-      insertPayload.greeting_text = template.greeting_text;
-      insertPayload.cake_title = template.cake_title;
-      insertPayload.letter_title = template.letter_title;
-      insertPayload.letter_content = template.letter_content;
-      insertPayload.secret_button_label = template.secret_button_label;
-    }
-  }
-
   const { data: site, error } = await supabase
     .from("sites")
-    .insert(insertPayload)
+    .insert({
+      owner_id: auth.user!.id,
+      slug,
+      recipient_name: recipientName,
+    })
     .select("id")
     .single();
 

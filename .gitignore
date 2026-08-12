@@ -1,18 +1,7 @@
-# dependencies
-/node_modules
-
-# next.js build output
-/.next/
-/out/
-*.tsbuildinfo
-next-env.d.ts
-
-# env files — real secrets live only locally and in Vercel's
-# Project Settings → Environment Variables, never in git
+node_modules
+.next
+out
+dev.db
+dev.db-journal
 .env
 .env.local
-.env.*.local
-
-# misc
-.DS_Store
-*.log

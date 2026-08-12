@@ -1,28 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Site, SiteData, Profile, Template } from "@/lib/types";
-
-/** Current logged-in user's profile row (approval + admin role). Null if logged out. */
-export async function getProfile(): Promise<Profile | null> {
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return null;
-
-  const { data } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
-  return (data as Profile) ?? null;
-}
-
-/** Active templates a member can pick from when creating a new site. */
-export async function getActiveTemplates(): Promise<Template[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("templates")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: true });
-
-  if (error) throw new Error(error.message);
-  return data ?? [];
-}
+import type { Site, SiteData } from "@/lib/types";
 
 /** All sites owned by the currently logged-in member (dashboard list). */
 export async function getUserSites(): Promise<Site[]> {
@@ -53,18 +30,7 @@ export async function getSiteForOwner(siteId: string): Promise<SiteData | null> 
   if (!auth.user) return null;
 
   const { data: site } = await supabase.from("sites").select("*").eq("id", siteId).maybeSingle();
-  if (!site) return null;
-
-  if (site.owner_id !== auth.user.id) {
-    // Not the owner — allow through only if the current user is an admin,
-    // so /admin can open the exact same full editor for any member's site.
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", auth.user.id)
-      .maybeSingle();
-    if (!profile?.is_admin) return null;
-  }
+  if (!site || site.owner_id !== auth.user.id) return null;
 
   const [reasonsRes, photosRes, videosRes] = await Promise.all([
     supabase.from("reasons").select("*").eq("site_id", siteId).order("order_index", { ascending: true }),
