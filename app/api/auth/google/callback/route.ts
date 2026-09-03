@@ -91,8 +91,15 @@ export async function GET(req: Request) {
           data: { emailVerified: new Date() },
         });
       }
-      if (profile.picture && !user.profile) {
-        await db.profile.create({ data: { userId: user.id, avatarUrl: profile.picture } });
+
+      // Keep the profile relation out of the User query type. Upsert is
+      // deterministic for both existing and previously-unprofiled users.
+      if (profile.picture) {
+        await db.profile.upsert({
+          where: { userId: user.id },
+          update: { avatarUrl: profile.picture },
+          create: { userId: user.id, avatarUrl: profile.picture },
+        });
       }
     }
 
