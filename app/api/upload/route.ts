@@ -1,1 +1,3 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 import {NextResponse} from 'next/server';import {getSessionUser} from '@/lib/auth';export async function POST(){const u=await getSessionUser();if(!u)return NextResponse.json({error:'Unauthorized'},{status:401});if(!process.env.CLOUDINARY_CLOUD_NAME)return NextResponse.json({error:'Cloudinary is not configured. Add CLOUDINARY_* environment variables.'},{status:503});return NextResponse.json({error:'Use signed upload from the client after configuring Cloudinary.'},{status:501})}

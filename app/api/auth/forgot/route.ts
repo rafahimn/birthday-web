@@ -1,1 +1,3 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 import {NextResponse} from 'next/server';import {db} from '@/lib/db';export async function POST(req:Request){const {email}=await req.json();if(email)await db.notification.create({data:{userId:(await db.user.findUnique({where:{email:email.toLowerCase()}}))?.id||'',title:'Password reset requested',message:'Configure Resend to deliver password reset email.'}}).catch(()=>{});return NextResponse.json({ok:true})}

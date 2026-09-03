@@ -28,3 +28,10 @@ Recommended Vercel settings:
 - Install Command: `npm install`
 - Build Command: `prisma generate && next build`
 - `DATABASE_URL` must be configured in Vercel Environment Variables.
+
+## Deployment requirement
+
+Vercel can compile the application before the database is configured. For actual login, dashboard,
+builder persistence, publishing, analytics and admin features, set `DATABASE_URL` in Vercel Environment
+Variables to your Supabase/PostgreSQL connection string. Public `/demo` and `/templates` have safe fallbacks
+when the database is not configured.

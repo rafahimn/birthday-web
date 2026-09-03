@@ -9,8 +9,7 @@
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
-    "postinstall": "prisma generate",
-    "prebuild": "node scripts/preflight.mjs"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
