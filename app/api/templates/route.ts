@@ -1,3 +1,1 @@
-import {NextResponse} from 'next/server';
-export async function GET(){return NextResponse.json({ok:true,data:[]})}
-export async function POST(req:Request){const body=await req.json().catch(()=>({}));return NextResponse.json({ok:true,data:body})}
+import {NextResponse} from 'next/server';import {db} from '@/lib/db';import {templateCatalog} from '@/lib/templates';export async function GET(){const existing=await db.template.findMany({where:{active:true}});if(existing.length)return NextResponse.json(existing);return NextResponse.json(templateCatalog.map((x,i)=>({...x,id:String(i),active:true,config:{}})))}

@@ -1,0 +1,1 @@
+export default function Page(){return <main className="mx-auto max-w-6xl p-8"><h1 className="text-3xl font-bold">Management Module</h1><p className="mt-3 text-zinc-400">This module is part of the Birthday Builder architecture and is ready for authenticated database-backed management.</p></main>}

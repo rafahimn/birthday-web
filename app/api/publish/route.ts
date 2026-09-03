@@ -1,3 +1,1 @@
-import {NextResponse} from 'next/server';
-export async function GET(){return NextResponse.json({ok:true,data:[]})}
-export async function POST(req:Request){const body=await req.json().catch(()=>({}));return NextResponse.json({ok:true,data:body})}
+import {NextResponse} from 'next/server';import {getSessionUser} from '@/lib/auth';import {db} from '@/lib/db';export async function POST(req:Request){const u=await getSessionUser();if(!u)return NextResponse.json({error:'Unauthorized'},{status:401});const {id}=await req.json();const s=await db.website.updateMany({where:{id,userId:u.id},data:{status:'published'}});return NextResponse.json({ok:s.count>0})}

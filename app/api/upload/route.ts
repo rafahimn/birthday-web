@@ -1,3 +1,1 @@
-import {NextResponse} from 'next/server';
-export async function GET(){return NextResponse.json({ok:true,data:[]})}
-export async function POST(req:Request){const body=await req.json().catch(()=>({}));return NextResponse.json({ok:true,data:body})}
+import {NextResponse} from 'next/server';import {getSessionUser} from '@/lib/auth';export async function POST(){const u=await getSessionUser();if(!u)return NextResponse.json({error:'Unauthorized'},{status:401});if(!process.env.CLOUDINARY_CLOUD_NAME)return NextResponse.json({error:'Cloudinary is not configured. Add CLOUDINARY_* environment variables.'},{status:503});return NextResponse.json({error:'Use signed upload from the client after configuring Cloudinary.'},{status:501})}

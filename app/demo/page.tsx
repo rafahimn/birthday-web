@@ -1,1 +1,1 @@
-import {MasterTemplate} from '@/components/template/MasterTemplate'; export default function Demo(){return <MasterTemplate demo/>}
+import {db} from '@/lib/db';import {defaultContent} from '@/lib/types';import {MasterTemplate} from '@/components/template/MasterTemplate';export default async function Demo(){const d=await db.demoSite.findFirst({where:{active:true},orderBy:{updatedAt:'desc'}});return <MasterTemplate demo content={{...defaultContent,...((d?.content as any)||{})}}/>}

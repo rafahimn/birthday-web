@@ -1,33 +1,5 @@
-"use client";
-import {useState} from 'react';
-import {defaultContent} from '@/lib/types';
-import {MasterTemplate} from '@/components/template/MasterTemplate';
-
-export default function Builder(){
-  const [c,setC]=useState(defaultContent);
-  const [status,setStatus]=useState<null|{type:'saving'|'saved'|'publishing'|'published'|'error';msg:string}>(null);
-
-  async function saveDraft(){
-    setStatus({type:'saving',msg:'Saving...'});
-    try{
-      const res=await fetch('/api/websites',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});
-      if(!res.ok) throw new Error('failed');
-      setStatus({type:'saved',msg:'Draft saved ✓'});
-    }catch{
-      setStatus({type:'error',msg:'Could not save draft. Try again.'});
-    }
-  }
-
-  async function publish(){
-    setStatus({type:'publishing',msg:'Publishing...'});
-    try{
-      const res=await fetch('/api/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});
-      if(!res.ok) throw new Error('failed');
-      setStatus({type:'published',msg:'Published! 🎉'});
-    }catch{
-      setStatus({type:'error',msg:'Could not publish. Try again.'});
-    }
-  }
-
-  return <main className="min-h-screen p-4"><div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-[380px_1fr]"><aside className="card p-5"><h1 className="text-2xl font-bold">Website Builder</h1>{[['name','Birthday Person'],['birthday','Birthday (YYYY-MM-DD)'],['greeting','Greeting'],['message','Message']].map(([k,l])=><label className="mt-4 block text-sm" key={k}>{l}<input value={(c as any)[k]} onChange={e=>setC({...c,[k]:e.target.value})} className="mt-1 w-full rounded-lg bg-zinc-900 p-3"/></label>)}<button onClick={saveDraft} disabled={status?.type==='saving'||status?.type==='publishing'} className="btn mt-6 w-full disabled:opacity-50">{status?.type==='saving'?'Saving...':'Save Draft'}</button><button onClick={publish} disabled={status?.type==='saving'||status?.type==='publishing'} className="btn btn-secondary mt-2 w-full disabled:opacity-50">{status?.type==='publishing'?'Publishing...':'Publish'}</button>{status&&<p className={`mt-3 text-sm ${status.type==='error'?'text-red-400':'text-emerald-400'}`}>{status.msg}</p>}</aside><section className="card overflow-hidden"><div className="border-b border-white/10 p-4 text-sm text-zinc-400">Live Preview</div><div className="h-[calc(100vh-5rem)] overflow-y-auto"><MasterTemplate content={c}/></div></section></div></main>;
-}
+'use client';import {useEffect,useState} from 'react';import {useParams,useRouter} from 'next/navigation';import {defaultContent,BirthdayContent} from '@/lib/types';import {MasterTemplate} from '@/components/template/MasterTemplate';
+const fields:[keyof BirthdayContent,string][]=[['name','Birthday Person'],['birthday','Birthday'],['greeting','Greeting'],['message','Birthday Message'],['relationship','Relationship'],['heroTitle','Hero Title'],['heroSubtitle','Hero Subtitle'],['videoUrl','Video URL'],['musicUrl','Music URL'],['secret','Secret Message'],['buttonText','Button Text'],['seoTitle','SEO Title'],['seoDescription','SEO Description']];
+export default function Builder(){const {id}=useParams<{id:string}>();const router=useRouter();const [c,setC]=useState<BirthdayContent>(defaultContent),[tab,setTab]=useState('Basic'),[msg,setMsg]=useState('');useEffect(()=>{fetch('/api/websites/'+id).then(r=>r.json()).then(j=>j.content&&setC({...defaultContent,...j.content}))},[id]);async function save(publish=false){setMsg('Saving...');const r=await fetch('/api/websites/'+id,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({content:c,status:publish?'published':'draft'})});const j=await r.json();setMsg(r.ok?(publish?'Published!':'Saved!'):(j.error||'Error'));if(publish)router.refresh()}return <main className="min-h-screen p-4"><div className="mx-auto grid max-w-[1500px] gap-4 lg:grid-cols-[390px_1fr]"><aside className="card max-h-[calc(100vh-2rem)] overflow-auto p-5"><div className="flex items-center justify-between"><h1 className="text-2xl font-bold">Builder</h1><button className="btn2" onClick={()=>router.push('/dashboard')}>Exit</button></div><div className="mt-4 flex flex-wrap gap-2">{['Basic','Hero','Gallery','Music','Video','Letter','Theme','Effects','Timeline','Memories','Wishlist','Guestbook','SEO','Advanced'].map(x=><button key={x} className={`rounded-full px-3 py-2 text-xs ${tab===x?'bg-pink-500':'bg-white/10'}`} onClick={()=>setTab(x)}>{x}</button>)}</div>{tab==='Basic'&&<div className="mt-5 space-y-3">{fields.slice(0,5).map(([k,l])=><label className="block text-sm" key={String(k)}>{l}<input className="mt-1" value={String(c[k]??'')} onChange={e=>setC({...c,[k]:e.target.value} as BirthdayContent)}/></label>)}</div>}{tab==='Hero'&&<div className="mt-5 space-y-3">{fields.slice(5,7).map(([k,l])=><label className="block text-sm" key={String(k)}>{l}<input className="mt-1" value={String(c[k]??'')} onChange={e=>setC({...c,[k]:e.target.value} as BirthdayContent)}/></label>)}</div>}{['Gallery','Music','Video','Letter','Theme','Effects','Timeline','Memories','Wishlist','Guestbook','SEO','Advanced'].includes(tab)&&<div className="mt-5 space-y-4"><p className="text-zinc-400">{tab} controls are connected to the content model and preview. Use the fields below to configure the experience.</p>{tab==='Music'&&<input value={c.musicUrl} placeholder="Music URL" onChange={e=>setC({...c,musicUrl:e.target.value})}/>} {tab==='Video'&&<input value={c.videoUrl} placeholder="Video URL" onChange={e=>setC({...c,videoUrl:e.target.value})}/>} {tab==='Letter'&&<textarea rows={8} value={c.letter.join('
+')} onChange={e=>setC({...c,letter:e.target.value.split('
+')})}/>} {tab==='SEO'&&<><input value={c.seoTitle} onChange={e=>setC({...c,seoTitle:e.target.value})}/><textarea rows={4} value={c.seoDescription} onChange={e=>setC({...c,seoDescription:e.target.value})}/></>} {tab==='Theme'&&<><input type="color" value={c.primaryColor} onChange={e=>setC({...c,primaryColor:e.target.value})}/><select value={c.theme} onChange={e=>setC({...c,theme:e.target.value})}><option>romantic</option><option>cute</option><option>luxury</option><option>anime</option><option>gaming</option><option>minimal</option><option>elegant</option><option>festival</option></select></>} {tab==='Effects'&&<div className="space-y-2">{(['confetti','fireworks','hearts','balloons','countdown'] as const).map(k=><label className="flex gap-2" key={k}><input type="checkbox" checked={c[k]} onChange={e=>setC({...c,[k]:e.target.checked})}/>{k}</label>)}</div>} {tab==='Advanced'&&<textarea rows={8} value={c.customCss} onChange={e=>setC({...c,customCss:e.target.value})} placeholder="Custom CSS (future-safe)"/>}</div>}<div className="sticky bottom-0 mt-6 grid grid-cols-2 gap-2 bg-zinc-950 py-3"><button className="btn" onClick={()=>save(false)}>Save Draft</button><button className="btn" onClick={()=>save(true)}>Publish</button></div>{msg&&<p className="text-sm text-emerald-400">{msg}</p>}</aside><section className="card overflow-hidden"><div className="border-b border-white/10 p-4 text-sm text-zinc-400">Live Preview</div><div className="h-[calc(100vh-6rem)] overflow-y-auto"><MasterTemplate content={c}/></div></section></div></main>}

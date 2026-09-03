@@ -1,1 +1,1 @@
-export default function Pricing(){return <main className="min-h-screen p-8 text-center"><h1 className="text-5xl font-black">Pricing</h1><p className="mt-4 text-zinc-400">Plans are configurable from the admin system.</p></main>}
+import Link from 'next/link';export default function Page(){return <main className="mx-auto max-w-5xl px-6 py-20"><Link href="/">← Home</Link><h1 className="mt-10 text-5xl font-black">Pricing</h1><p className="mt-5 max-w-2xl text-zinc-400">Pricing is architecture-ready and can be managed from the admin settings.</p></main>}
