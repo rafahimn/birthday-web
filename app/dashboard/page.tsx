@@ -2,13 +2,15 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import Link from 'next/link';
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, isApprovalRequired } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: { pending?: string } }) {
   const u = await getSessionUser();
   if (!u) redirect('/login');
+
+  const gated = u.role !== 'admin' && !u.approved && await isApprovalRequired();
 
   let sites: any[] = [];
   let loadError = '';
@@ -25,10 +27,19 @@ export default async function Dashboard() {
         <div><p className="text-zinc-400">Dashboard</p><h1 className="text-4xl font-black">Hi, {u.name || u.email}</h1></div>
         <div className="flex flex-wrap gap-2">
           {u.role === 'admin' && <Link className="btn2" href="/admin">Admin Panel</Link>}
-          <Link className="btn" href="/builder/new">+ Create Website</Link>
+          {gated ? (
+            <span className="btn2 cursor-not-allowed opacity-60" title="Waiting for admin approval">+ Create Website</span>
+          ) : (
+            <Link className="btn" href="/builder/new">+ Create Website</Link>
+          )}
           <a className="btn2" href="/api/auth/logout">Logout</a>
         </div>
       </header>
+      {gated && (
+        <div className="mt-6 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-amber-200">
+          Your account is waiting for admin approval. You can look around, but you&apos;ll be able to create a website once an admin approves you.
+        </div>
+      )}
       {loadError && <div className="mt-6 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-amber-200">{loadError}</div>}
       <section className="mt-8 grid gap-4 md:grid-cols-3">
         <div className="card p-5"><p className="text-zinc-400">Websites</p><b className="text-3xl">{sites.length}</b></div>

@@ -97,6 +97,16 @@ create index if not exists analytics_events_created_at_idx on public.analytics_e
 create index if not exists gallery_website_id_idx on public.gallery(website_id);
 create index if not exists media_user_id_idx on public.media(user_id);
 
+-- Login hardening: brute-force lockout tracking (safe to re-run).
+alter table public.profiles add column if not exists failed_login_attempts integer not null default 0;
+alter table public.profiles add column if not exists login_locked_until timestamptz;
+create index if not exists profiles_email_idx on public.profiles(email);
+
+-- Member approval workflow: existing rows backfill to approved=true, new
+-- signups default to pending unless bypassed via admin email or invite link.
+alter table public.profiles add column if not exists approved boolean not null default true;
+create index if not exists profiles_approved_idx on public.profiles(approved);
+
 create or replace function public.set_updated_at() returns trigger language plpgsql as $$ begin new.updated_at=now(); return new; end $$;
 create or replace function public.handle_new_user() returns trigger language plpgsql security definer set search_path=public as $$
 begin insert into public.profiles(id,email,name) values(new.id,new.email,coalesce(new.raw_user_meta_data->>'full_name',new.raw_user_meta_data->>'name',split_part(new.email,'@',1))) on conflict(id) do update set email=excluded.email,name=coalesce(excluded.name,profiles.name); return new; end $$;

@@ -18,7 +18,9 @@ const googleErrors: Record<string, string> = {
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [show, setShow] = useState(false);
   const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   useEffect(() => {
     // Read the OAuth error only on the client. This avoids Next.js static
@@ -30,14 +32,19 @@ export default function Login() {
   async function go(e: React.FormEvent) {
     e.preventDefault();
     setErr('');
-    const r = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const j = await r.json();
-    if (!r.ok) return setErr(j.error || 'Login failed');
-    router.push('/dashboard');
+    setLoading(true);
+    try {
+      const r = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const j = await r.json();
+      if (!r.ok) return setErr(j.error || 'Login failed');
+      router.push('/dashboard');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -70,14 +77,20 @@ export default function Login() {
           />
           <input
             placeholder="Password"
-            type="password"
+            type={show ? 'text' : 'password'}
             autoComplete="current-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
           />
+          <label className="flex items-center gap-2 text-sm text-zinc-400">
+            <input type="checkbox" className="w-auto" checked={show} onChange={e => setShow(e.target.checked)} />
+            Show password
+          </label>
           {err && <p className="text-sm text-red-400">{err}</p>}
-          <button className="btn w-full" type="submit">Login</button>
+          <button className="btn w-full" type="submit" disabled={loading}>
+            {loading ? 'Logging in…' : 'Login'}
+          </button>
         </form>
 
         <p className="mt-5 text-sm text-zinc-400">
