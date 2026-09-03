@@ -1,0 +1,1 @@
+export default function Pricing(){return <main className="min-h-screen p-8 text-center"><h1 className="text-5xl font-black">Pricing</h1><p className="mt-4 text-zinc-400">Plans are configurable from the admin system.</p></main>}

@@ -1,0 +1,1 @@
+export const templates=['master','romantic','cute','luxury','anime','gaming','minimal','elegant','festival'];

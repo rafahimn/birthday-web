@@ -1,0 +1,1 @@
+import {MasterTemplate} from '@/components/template/MasterTemplate'; export default function Site({params}:{params:{slug:string}}){return <MasterTemplate slug={params.slug}/>}

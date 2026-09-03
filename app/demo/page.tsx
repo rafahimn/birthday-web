@@ -1,6 +1,1 @@
-import BirthdayExperience from "../BirthdayExperience";
-import { getDemoData } from "@/lib/demoData";
-
-export default function DemoPage() {
-  return <BirthdayExperience data={getDemoData()} />;
-}
+import {MasterTemplate} from '@/components/template/MasterTemplate'; export default function Demo(){return <MasterTemplate demo/>}

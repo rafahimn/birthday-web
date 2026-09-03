@@ -1,99 +1,18 @@
-# Birthday Site Builder — multi-tenant
+# Birthday Builder SaaS
 
-A Next.js + Supabase SaaS. Anyone can sign up, build their own birthday
-surprise site (countdown → greeting → cake cutting → reasons → photo
-gallery → videos → letter → secret screen → contact form), and share it
-with a unique public link. Every screen/animation/interaction lives in
-`app/BirthdayExperience.tsx`, driven entirely by data from Supabase — the
-same component powers the homepage demo, the dashboard live preview, and
-the public share link.
+This package is the complete architectural foundation based on the supplied original HTML and requested SaaS structure. The original reference is preserved at `docs/master-template-reference.html.txt`.
 
-## How it's organized
+## Routes
+Home, Demo, Templates, Features, Pricing, FAQ, Contact, Login, Signup, Dashboard, Builder, Published `/site/[slug]`, Admin.
 
-- `app/page.tsx` — marketing homepage: embeds a live, no-login `/demo` in
-  an iframe, a 3-step "how it works", and Log in / Sign up.
-- `app/demo/page.tsx` + `lib/demoData.ts` — the public demo (hardcoded
-  placeholder data, no database).
-- `app/login`, `app/signup` — Supabase Auth (email/password + Google OAuth).
-- `app/dashboard/page.tsx` — a member's list of sites + create new.
-- `app/dashboard/[siteId]/...` — the per-site admin panel (Overview with
-  live preview + publish toggle + slug editor, Countdown & Greeting,
-  Contact, Reasons, Photos, Videos, Letter, Secret Photo). Every page
-  checks that the logged-in user owns `siteId` before showing anything.
-- `app/s/[slug]/page.tsx` — the public share link. No login needed; looks
-  up a *published* site by slug and renders `BirthdayExperience`.
-- `lib/types.ts` — `Site` (all customizable fields), `Reason`, `Photo`,
-  `VideoItem`.
-- `lib/data.ts` — `getUserSites`, `getSiteForOwner` (dashboard, ownership
-  checked explicitly), `getSiteBySlug` (public, published-only).
-- `lib/actions.ts` — all server actions (auth, site CRUD, publish/slug,
-  and reasons/photos/videos/settings/contact/letter/secret CRUD), every
-  mutation scoped to `siteId` and checked against the logged-in owner.
-- `middleware.ts` + `lib/supabase/middleware.ts` — protects `/dashboard/*`,
-  redirects logged-in users away from `/login` and `/signup`.
+## Core stack
+Next.js 14, React, TypeScript, Tailwind, Prisma/PostgreSQL, Cloudinary, Resend, Vercel.
 
-## Database: Supabase (Postgres)
+## Data model
+Users, websites, templates, analytics events, notifications, settings. Website content is a reusable JSON contract so all templates share one builder data model.
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Copy `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   (Project Settings → API) into `.env.local`.
-3. Open the SQL Editor and run all of `supabase_schema.sql` — it creates
-   `sites`, `reasons`, `photos`, `videos`, and the Row Level Security
-   policies that make ownership + the public share link work.
-4. Authentication → Providers → Email → make sure "Allow new users to
-   sign up" is **ON** (members create their own accounts from `/signup`).
-5. Authentication → Providers → Google → turn it **ON** and paste in the
-   Client ID + Client Secret from a Google Cloud OAuth app. Google's
-   console needs this Authorized redirect URI (Supabase shows the exact
-   value on this same page):
-   `https://<your-project-ref>.supabase.co/auth/v1/callback`
-6. Authentication → URL Configuration → set **Site URL** to your deployed
-   domain, and add both your deployed domain and `http://localhost:3000`
-   under **Redirect URLs** (each followed by `/auth/callback`, e.g.
-   `https://yourdomain.com/auth/callback`). Without this, Google login
-   will redirect back to the wrong place after sign-in.
+## Required production wiring
+Auth/email verification/reset, database persistence, RLS/authorization, Cloudinary signed upload, full CRUD APIs, publish/unpublish, analytics, admin CRUD, rate limiting and complete pixel-level migration of the supplied HTML/CSS/JS into the Master Template.
 
-**Note on Gmail + Google login together:** if someone already has an
-account for a given email (created either via the password form or via
-"Continue with Google"), signing up again with the *same* email through
-the *other* method won't create a second account — Supabase silently
-merges/ignores it. `signup()` in `lib/actions.ts` detects this case and
-tells the person to log in (or use Google) instead of leaving them with
-a broken password. If you ever see "Invalid login credentials" reports
-after adding Google login, this is almost always why: the person's
-email already exists as a Google-only account with no password set.
-
-If you're migrating from the old single-site version of this project,
-see the migration notes at the bottom of `supabase_schema.sql`.
-
-## Media uploads: Cloudinary
-
-Same as before — photo/video/audio fields have an **Upload** button next
-to the URL field.
-
-1. Create a free account at [cloudinary.com](https://cloudinary.com).
-2. Copy your **Cloud name** from the dashboard home page.
-3. Settings → Upload → Upload presets → Add upload preset → Signing Mode
-   **Unsigned** → Save. Copy the preset's name.
-4. Put both into `.env.local`:
-   ```
-   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
-   NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET="your-unsigned-preset"
-   ```
-
-## Running it locally
-
-```bash
-npm install
-cp .env.example .env.local   # fill in Supabase + Cloudinary keys
-npm run dev
-```
-
-Open http://localhost:3000 — sign up, create a site from `/dashboard`,
-fill in the editor, then open `/s/<your-slug>` to see the live public page.
-
-## Deploying
-
-Any Next.js host works (Vercel is the easiest). Set the same env vars
-from `.env.example` in your host's dashboard, and set
-`NEXT_PUBLIC_BASE_URL` to your real domain.
+## Setup
+Copy `.env.example` to `.env.local`, install dependencies, run `npx prisma generate`, `npx prisma db push`, then `npm run dev`.

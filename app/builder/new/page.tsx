@@ -1,0 +1,1 @@
+import Builder from '../[id]/page'; export default Builder;
