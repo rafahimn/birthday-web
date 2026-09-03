@@ -1,8 +1,79 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
-model User { id String @id @default(cuid()); email String @unique; passwordHash String?; name String?; role String @default("user"); emailVerified DateTime?; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; websites Website[]; notifications Notification[] }
-model Website { id String @id @default(cuid()); userId String; user User @relation(fields:[userId],references:[id],onDelete:Cascade); slug String @unique; title String; status String @default("draft"); templateId String @default("master"); content Json; views Int @default(0); createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; analytics AnalyticsEvent[] }
-model Template { id String @id @default(cuid()); slug String @unique; name String; category String; description String?; previewUrl String?; active Boolean @default(true); config Json; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt }
-model AnalyticsEvent { id String @id @default(cuid()); websiteId String; website Website @relation(fields:[websiteId],references:[id],onDelete:Cascade); type String; country String?; device String?; browser String?; referrer String?; createdAt DateTime @default(now()) }
-model Notification { id String @id @default(cuid()); userId String; user User @relation(fields:[userId],references:[id],onDelete:Cascade); title String; message String; read Boolean @default(false); createdAt DateTime @default(now()) }
-model Setting { key String @id; value Json; updatedAt DateTime @updatedAt }
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  name          String?
+  role          String    @default("user")
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  websites      Website[]
+  notifications Notification[]
+}
+
+model Website {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug       String   @unique
+  title      String
+  status     String   @default("draft")
+  templateId String   @default("master")
+  content    Json
+  views      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  analytics  AnalyticsEvent[]
+}
+
+model Template {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  category    String
+  description String?
+  previewUrl  String?
+  active      Boolean  @default(true)
+  config      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  websiteId String
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  type      String
+  country   String?
+  device    String?
+  browser   String?
+  referrer  String?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
