@@ -1,36 +1,12 @@
-import { NextResponse } from 'next/server';
+import {NextResponse} from 'next/server';
 import crypto from 'node:crypto';
-
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
-const STATE_COOKIE = 'bb_google_state';
-
-export async function GET(req: Request) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${new URL(req.url).origin}/api/auth/google/callback`;
-
-  if (!clientId) {
-    return NextResponse.redirect(new URL('/login?error=google_not_configured', req.url));
-  }
-
-  const state = crypto.randomBytes(32).toString('hex');
-  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', 'openid email profile');
-  url.searchParams.set('state', state);
-  url.searchParams.set('access_type', 'online');
-  url.searchParams.set('prompt', 'select_account');
-
-  const response = NextResponse.redirect(url);
-  response.cookies.set(STATE_COOKIE, state, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 10 * 60,
-  });
-  return response;
+import {googleStateCookie,googleVerifierCookie} from '@/lib/auth';
+function base64url(b:Buffer){return b.toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+export async function GET(req:Request){
+ const supabase=process.env.NEXT_PUBLIC_SUPABASE_URL, app=process.env.NEXT_PUBLIC_APP_URL||new URL(req.url).origin;
+ if(!supabase)return NextResponse.redirect(new URL('/login?error=supabase_not_configured',req.url));
+ const verifier=base64url(crypto.randomBytes(32)); const challenge=base64url(crypto.createHash('sha256').update(verifier).digest()); const state=base64url(crypto.randomBytes(24));
+ const redirectTo=`${app.replace(/\/$/,'')}/api/auth/google/callback`;
+ const authUrl=new URL(`${supabase.replace(/\/$/,'')}/auth/v1/authorize`);authUrl.searchParams.set('provider','google');authUrl.searchParams.set('redirect_to',redirectTo);authUrl.searchParams.set('code_challenge',challenge);authUrl.searchParams.set('code_challenge_method','s256');authUrl.searchParams.set('state',state);
+ const r=NextResponse.redirect(authUrl); const opts={httpOnly:true,sameSite:'lax' as const,secure:process.env.NODE_ENV==='production',path:'/',maxAge:600};r.cookies.set(googleStateCookie,state,opts);r.cookies.set(googleVerifierCookie,verifier,opts);return r;
 }

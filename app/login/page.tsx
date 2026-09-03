@@ -11,6 +11,8 @@ const googleErrors: Record<string, string> = {
   google_profile_failed: 'Could not read your Google profile. Please try again.',
   google_email_not_verified: 'Your Google email is not verified.',
   google_login_failed: 'Google Login failed. Please try again.',
+  auth_callback_failed: 'Authentication could not be completed. Please try again.',
+  supabase_not_configured: 'Supabase authentication is not configured yet.',
 };
 
 export default function Login() {

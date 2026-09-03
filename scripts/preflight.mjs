@@ -1,8 +1,11 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-const schema = readFileSync(join(process.cwd(), 'prisma', 'schema.prisma'), 'utf8');
-if (!schema.includes('generator client') || !schema.includes('datasource db')) {
-  throw new Error('Invalid Prisma schema structure: generator/datasource block is missing.');
-}
-console.log('Source preflight passed. Database environment validation is deferred to runtime.');
+import fs from 'node:fs';
+import path from 'node:path';
+const root=process.cwd();
+const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+if(pkg.dependencies?.['@prisma/client']||pkg.devDependencies?.prisma) throw new Error('Prisma must not be present in Supabase-only build.');
+if(pkg.dependencies?.bcryptjs) throw new Error('bcryptjs is not needed; Supabase Auth owns passwords.');
+const required=['NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_ANON_KEY','SUPABASE_SERVICE_ROLE_KEY'];
+const env=fs.readFileSync(path.join(root,'.env.example'),'utf8');
+for(const k of required) if(!env.includes(k)) throw new Error(`Missing ${k} in .env.example`);
+if(!fs.existsSync(path.join(root,'supabase_schema.sql'))) throw new Error('supabase_schema.sql is missing.');
+console.log('Birthday Builder Supabase preflight: PASS');

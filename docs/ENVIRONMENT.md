@@ -1,20 +1,23 @@
-# Environment setup
+# Environment & Supabase setup
 
-## Supabase
-
-Set `DATABASE_URL` to the Supabase **pooler** connection string (port 6543, `pgbouncer=true`) for normal application traffic.
-Set `DIRECT_URL` to the Supabase direct database connection (port 5432) for Prisma migrations / `db push`.
-
-Also keep the standard Supabase project variables ready for client/server integrations:
+## Vercel variables
+Set these for Production/Preview as appropriate:
+- `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (server-only; never expose to browser code)
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only)
+- optional `SMTP_*`, `EMAIL_FROM`, `ADMIN_EMAIL` for direct app mail
 
-## Google Login
+There is **no Prisma/DATABASE_URL/DIRECT_URL** in the Supabase-only architecture.
 
-Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.
-The production redirect URI must exactly match the URI registered in Google Cloud Console.
+## Supabase Auth
+1. Authentication > Providers > enable Email and Google.
+2. Configure Google Client ID/Secret in Supabase, not in Vercel.
+3. Authentication > URL Configuration: set the Site URL to `NEXT_PUBLIC_APP_URL`.
+4. Add redirect URL:
+   `https://YOUR-DOMAIN/api/auth/google/callback`
+5. For password recovery/email confirmation, allow:
+   `https://YOUR-DOMAIN/auth/callback`
 
 ## Gmail SMTP
-
-Set the Gmail SMTP variables and use a Google App Password. Never put the normal Gmail password in the project.
+In Supabase Dashboard > Authentication > SMTP Settings, configure Gmail SMTP with a Google App Password. This makes Supabase verification, recovery and auth emails use Gmail SMTP.

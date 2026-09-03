@@ -1,52 +1,31 @@
 # Birthday Builder SaaS
 
-Production-oriented Next.js birthday website builder. The supplied original HTML is kept as the Master Template reference and the interactive experience is migrated into a reusable React template.
+Production-oriented birthday website builder using **Next.js + Supabase + Vercel**.
 
-## Setup
-1. `npm install`
-2. Copy `.env.example` to `.env.local` and fill `DATABASE_URL` plus optional Cloudinary/Google/Gmail SMTP values.
-3. `npx prisma db push`
-4. `npm run dev`
+## Quick setup
+1. Create a Supabase project.
+2. Run `supabase_schema.sql` in Supabase SQL Editor.
+3. In Supabase Authentication, enable Email and Google providers. Configure Google Client ID/Secret inside Supabase.
+4. Configure Gmail SMTP under Supabase Authentication > SMTP Settings using a Google App Password.
+5. Copy `.env.example` to `.env.local` and fill the Supabase variables.
+6. Set the same variables in Vercel.
+7. Deploy.
 
-## Build
-`npm run build`
+## Important environment variables
+- `NEXT_PUBLIC_APP_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only)
+- optional direct `SMTP_*` variables for application/admin messages
 
-## Vercel
-Set the same environment variables in Vercel. The project runs Prisma generation automatically during install/build.
+There is no Prisma setup and no `DATABASE_URL`/`DIRECT_URL`.
 
-## First admin
-After creating a user, set its Prisma `role` to `admin` (or seed an admin through your database tooling). Admin routes never expose a public admin-login button.
-
-## Vercel / Prisma fix
-
-The Prisma schema is intentionally formatted as a standard multiline Prisma schema.
-Do not minify model blocks onto one line. Vercel runs `prisma validate` before the Next.js build,
-then `prisma generate` during the build.
-
-Recommended Vercel settings:
-- Framework Preset: Next.js
-- Install Command: `npm install`
-- Build Command: `prisma generate && next build`
-- `DATABASE_URL` must be configured in Vercel Environment Variables.
-
-## Deployment requirement
-
-Vercel can compile the application before the database is configured. For actual login, dashboard,
-builder persistence, publishing, analytics and admin features, set `DATABASE_URL` in Vercel Environment
-Variables to your Supabase/PostgreSQL connection string. Public `/demo` and `/templates` have safe fallbacks
-when the database is not configured.
-
-## Google Login setup
-
-This project uses Google OAuth directly (no NextAuth dependency) and then creates the
-same `bb_session` cookie used by email/password login.
-
-Set:
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `GOOGLE_REDIRECT_URI`
-
-For production, `GOOGLE_REDIRECT_URI` must be exactly:
+## Google redirect
+In Supabase Authentication > URL Configuration, add:
 `https://YOUR-DOMAIN/api/auth/google/callback`
 
-In Google Cloud Console, add that exact URL under Authorized redirect URIs.
+## Admin
+Create/sign up a user, then set that user's `profiles.role` to `admin` in Supabase Table Editor/SQL Editor. Admin routes are protected server-side and no public admin-login button is exposed.
+
+## Verification
+Run `npm run build`. The project contains a Supabase-only preflight script and no Prisma build step.

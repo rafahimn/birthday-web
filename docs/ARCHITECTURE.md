@@ -1,27 +1,10 @@
 # Birthday Builder Architecture
 
-This project keeps the requested SaaS structure: public website, live demo, auth, member dashboard, builder, reusable master template, published sites, admin modules, template catalog, database models, media abstraction, API routes, analytics and deployment configuration.
-
-## Master Template
-`docs/master-template-reference.html.txt` is the supplied original HTML reference. The React `MasterTemplate` preserves its core interaction model: countdown-ready content, typewriter greeting, candle interactions, cake cut state, section navigation, photo/video/letter/secret areas, music and configurable effects.
-
-## Production integrations
-- PostgreSQL via Prisma (`DATABASE_URL`)
-- Cloudinary environment variables for media
-- Google/Gmail SMTP environment variables for transactional email
-- Vercel build uses `prisma generate && next build`
-
-## Security
-- HTTP-only session cookie
-- bcrypt password hashing
-- user ownership checks on website APIs
-- admin role gate
-- Prisma relational constraints
-- input validation for authentication
-
-## Routes
-Public: `/`, `/demo`, `/templates`, `/features`, `/pricing`, `/faq`, `/contact`, `/login`, `/signup`.
-Member: `/dashboard`, `/builder/new`, `/builder/[id]`.
-Published: `/site/[slug]`.
-Admin: `/admin`.
-APIs: `/api/auth/*`, `/api/websites`, `/api/websites/[id]`, `/api/publish`, `/api/upload`, `/api/templates`, `/api/analytics`.
+- Next.js 14 App Router + React + Tailwind
+- Supabase Auth: email/password, email confirmation, password recovery, Google OAuth
+- Supabase Postgres: all application tables, relationships, indexes and RLS
+- Supabase Storage can be used for app media; Cloudinary remains supported for image/media hosting
+- Gmail SMTP: configure it in Supabase Authentication SMTP settings so Supabase verification/recovery/auth emails use Gmail
+- Vercel: production deployment
+- Server-side Supabase REST calls use the service-role key only; it is never exposed to the browser.
+- No Prisma, Prisma Client, DATABASE_URL or DIRECT_URL is required.
