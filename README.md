@@ -4,7 +4,7 @@ Production-oriented Next.js birthday website builder. The supplied original HTML
 
 ## Setup
 1. `npm install`
-2. Copy `.env.example` to `.env.local` and fill `DATABASE_URL` plus optional Cloudinary/Resend values.
+2. Copy `.env.example` to `.env.local` and fill `DATABASE_URL` plus optional Cloudinary/Google/Gmail SMTP values.
 3. `npx prisma db push`
 4. `npm run dev`
 
@@ -35,3 +35,18 @@ Vercel can compile the application before the database is configured. For actual
 builder persistence, publishing, analytics and admin features, set `DATABASE_URL` in Vercel Environment
 Variables to your Supabase/PostgreSQL connection string. Public `/demo` and `/templates` have safe fallbacks
 when the database is not configured.
+
+## Google Login setup
+
+This project uses Google OAuth directly (no NextAuth dependency) and then creates the
+same `bb_session` cookie used by email/password login.
+
+Set:
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI`
+
+For production, `GOOGLE_REDIRECT_URI` must be exactly:
+`https://YOUR-DOMAIN/api/auth/google/callback`
+
+In Google Cloud Console, add that exact URL under Authorized redirect URIs.

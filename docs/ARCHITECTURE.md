@@ -8,7 +8,7 @@ This project keeps the requested SaaS structure: public website, live demo, auth
 ## Production integrations
 - PostgreSQL via Prisma (`DATABASE_URL`)
 - Cloudinary environment variables for media
-- Resend environment variables for transactional email
+- Google/Gmail SMTP environment variables for transactional email
 - Vercel build uses `prisma generate && next build`
 
 ## Security
