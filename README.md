@@ -16,3 +16,15 @@ Set the same environment variables in Vercel. The project runs Prisma generation
 
 ## First admin
 After creating a user, set its Prisma `role` to `admin` (or seed an admin through your database tooling). Admin routes never expose a public admin-login button.
+
+## Vercel / Prisma fix
+
+The Prisma schema is intentionally formatted as a standard multiline Prisma schema.
+Do not minify model blocks onto one line. Vercel runs `prisma validate` before the Next.js build,
+then `prisma generate` during the build.
+
+Recommended Vercel settings:
+- Framework Preset: Next.js
+- Install Command: `npm install`
+- Build Command: `prisma generate && next build`
+- `DATABASE_URL` must be configured in Vercel Environment Variables.
