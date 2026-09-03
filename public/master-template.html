@@ -1004,11 +1004,23 @@
             
             if (isBirthdayToday && !birthdayAudioPlayed) {
                 playBirthdayAudio();
+            } else if (!countdownAudioPlayed) {
+                // If we're already inside the last-10-seconds window when the
+                // first interaction happens, start the countdown sound right
+                // away instead of waiting for the next 1s tick.
+                updateCountdown();
             }
         }
         
         document.body.addEventListener('click', handleGlobalClick);
-        document.body.addEventListener('touchstart', handleGlobalClick);
+        document.body.addEventListener('touchstart', handleGlobalClick, { passive: true });
+        // Any of these count as "the visitor did something" — not just a literal
+        // click — so sound unlocks on the first scroll/drag/keypress too, since
+        // browsers require a genuine user gesture before audio can play.
+        document.body.addEventListener('pointerdown', handleGlobalClick, { passive: true });
+        document.body.addEventListener('keydown', handleGlobalClick);
+        window.addEventListener('scroll', handleGlobalClick, { passive: true, once: true });
+        window.addEventListener('wheel', handleGlobalClick, { passive: true, once: true });
 
         // Play button
         window.startAudio = function(event) {
@@ -2000,6 +2012,10 @@
         }
 
         // Initialize
+        // Show the sound button right away — most browsers block audio until the
+        // visitor interacts with the page at least once, so make that obvious
+        // instead of silently staying muted with no explanation.
+        if (!audioAllowed) document.getElementById('playBtn').classList.add('show');
         updateCountdown();
         setInterval(updateCountdown, 1000);
 

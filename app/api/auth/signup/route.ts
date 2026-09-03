@@ -11,7 +11,7 @@ export async function POST(req:Request){try{
  const verifier=b64(crypto.randomBytes(32)),challenge=b64(crypto.createHash('sha256').update(verifier).digest());
  const r=await fetch(`${url.replace(/\/$/,'')}/auth/v1/signup`,{method:'POST',headers:{apikey:key,'Content-Type':'application/json'},body:JSON.stringify({email:v.email.toLowerCase(),password:v.password,data:{full_name:v.name},code_challenge:challenge,code_challenge_method:'s256',email_redirect_to:`${app.replace(/\/$/,'')}/auth/callback`}),cache:'no-store'});
  const data=await r.json(); if(!r.ok)return NextResponse.json({error:data?.msg||data?.message||'Unable to create account'},{status:r.status});
- if(data?.user?.id) await supabaseRest('profiles',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:data.user.id,email:data.user.email,name:v.name,role:'user'})}).catch(()=>{});
+ if(data?.user?.id) await supabaseRest('profiles',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:data.user.id,email:data.user.email,name:v.name,role:(process.env.ADMIN_EMAIL||'').trim().toLowerCase()===v.email.toLowerCase()?'admin':'user'})}).catch(()=>{});
  const response=NextResponse.json({ok:true,requiresEmailVerification:!data?.session});
  if(data?.session?.access_token)setSessionCookie(response,data.session.access_token,data.session.refresh_token); else response.cookies.set(googleVerifierCookie,verifier,{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/',maxAge:3600});
  return response;

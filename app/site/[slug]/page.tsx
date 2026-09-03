@@ -17,7 +17,5 @@ export default async function PublishedSite({ params }: { params: { slug: string
   } catch (error) {
     console.error('view increment failed', error);
   }
-  return <main className="min-h-screen bg-black"><MasterTemplate data={{
-    name: c.name, age: c.age, month: c.month, day: c.day, hour: c.hour, minute: c.minute
-  }} /></main>;
+  return <main className="min-h-screen bg-black"><MasterTemplate content={c} /></main>;
 }

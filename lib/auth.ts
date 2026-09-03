@@ -18,7 +18,15 @@ export async function getSessionUser(){
   const token=cookies().get(COOKIE)?.value;if(!token)return null;
   const auth=await authFetch('user'); if(!auth?.id)return null;
   const rows=await supabaseRest<any[]>(`profiles?select=*&id=eq.${encodeURIComponent(auth.id)}&limit=1`).catch(()=>[]);
-  const p=rows?.[0];
+  let p=rows?.[0];
+  // Bootstrap: whoever signs up/logs in with the email in ADMIN_EMAIL is
+  // treated as an admin, even if their profile row predates that setting.
+  const adminEmail=process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const userEmail=(auth.email||p?.email||'').toLowerCase();
+  if(adminEmail && userEmail && adminEmail===userEmail && p?.role!=='admin'){
+    p={...(p||{id:auth.id,email:auth.email}),role:'admin'};
+    await supabaseRest('profiles',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:auth.id,email:auth.email,role:'admin'})}).catch(()=>{});
+  }
   return {id:auth.id,email:auth.email||p?.email,name:p?.name||auth.user_metadata?.full_name||auth.user_metadata?.name||null,role:p?.role||'user',emailVerified:auth.email_confirmed_at?new Date(auth.email_confirmed_at):null,passwordHash:null,profile:p||null};
 }
 export async function requireUser(){const u=await getSessionUser();if(!u)throw new Error('UNAUTHORIZED');return u}
