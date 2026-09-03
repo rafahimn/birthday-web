@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const googleErrors: Record<string, string> = {
@@ -18,12 +18,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
   const router = useRouter();
-  const params = useSearchParams();
-
   useEffect(() => {
-    const code = params.get('error');
+    // Read the OAuth error only on the client. This avoids Next.js static
+    // prerender requirements for useSearchParams() on the /login route.
+    const code = new URLSearchParams(window.location.search).get('error');
     if (code) setErr(googleErrors[code] || 'Login failed. Please try again.');
-  }, [params]);
+  }, []);
 
   async function go(e: React.FormEvent) {
     e.preventDefault();
