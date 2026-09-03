@@ -6,6 +6,8 @@ import type { BirthdayContent } from '@/lib/types';
 type Props = {
   data?: { name?: string; age?: number; month?: number; day?: number; hour?: number; minute?: number };
   content?: BirthdayContent;
+  /** Demo/preview mode: countdown always ends 10 seconds after load, then behaves as normal. */
+  demo?: boolean;
 };
 
 function contentToData(content?: BirthdayContent) {
@@ -21,15 +23,16 @@ function contentToData(content?: BirthdayContent) {
   return result;
 }
 
-export default function MasterTemplate({ data, content }: Props) {
+export default function MasterTemplate({ data, content, demo }: Props) {
   const resolved = useMemo(() => ({ ...contentToData(content), ...data }), [content, data]);
   const src = useMemo(() => {
     const p = new URLSearchParams();
     for (const [k, v] of Object.entries(resolved)) {
       if (v !== undefined && v !== null && v !== '') p.set(k, String(v));
     }
+    if (demo) p.set('demo', '1');
     return `/master-template.html${p.toString() ? `?${p.toString()}` : ''}`;
-  }, [resolved]);
+  }, [resolved, demo]);
 
   return (
     <iframe

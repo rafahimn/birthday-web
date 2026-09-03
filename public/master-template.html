@@ -614,6 +614,12 @@
             name: _BB_PARAMS.get("name") || "Othoy.."
         };
 
+        // Demo/preview mode: instead of counting down to a real configured date,
+        // the countdown always finishes 10 seconds after the page loads, then the
+        // rest of the experience (greeting, cake, etc.) plays exactly as normal.
+        const isDemoMode = _BB_PARAMS.get("demo") === "1";
+        let demoBirthdayTarget = null;
+
         // Parse URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('name')) {
@@ -1029,6 +1035,9 @@
         }
 
         function isBirthday(date) {
+            if (isDemoMode) {
+                return !!demoBirthdayTarget && date >= demoBirthdayTarget;
+            }
             if (date.getMonth() !== CONFIG.month || date.getDate() !== CONFIG.day) return false;
             const target = new Date(date.getFullYear(), CONFIG.month, CONFIG.day, CONFIG.hour, CONFIG.minute, 0);
             return date >= target;
@@ -1122,6 +1131,7 @@
                 candlesBlown = 0; 
                 currentReasonIndex = 0; 
                 historyStack = ['countdown'];
+                if (isDemoMode) demoBirthdayTarget = null; // re-arm a fresh 10s countdown
                 showScreen('countdown'); 
                 updateCountdown();
             }, 86400000); // 24 hours
@@ -1143,6 +1153,10 @@
         // Updated countdown function
         function updateCountdown() {
             const now = new Date();
+
+            if (isDemoMode && !demoBirthdayTarget) {
+                demoBirthdayTarget = new Date(now.getTime() + 10000); // 10s from first tick
+            }
             
             const isBirthdayToday = isBirthday(now);
             
@@ -1186,11 +1200,15 @@
             document.getElementById('greetingScreen').classList.remove('show');
             document.getElementById('countdownScreen').classList.remove('hide');
             
-            const currentYear = now.getFullYear();
-            let birthday = new Date(currentYear, CONFIG.month, CONFIG.day, CONFIG.hour, CONFIG.minute, 0);
-            
-            if (now > birthday) {
-                birthday = new Date(currentYear + 1, CONFIG.month, CONFIG.day, CONFIG.hour, CONFIG.minute, 0);
+            let birthday;
+            if (isDemoMode) {
+                birthday = demoBirthdayTarget;
+            } else {
+                const currentYear = now.getFullYear();
+                birthday = new Date(currentYear, CONFIG.month, CONFIG.day, CONFIG.hour, CONFIG.minute, 0);
+                if (now > birthday) {
+                    birthday = new Date(currentYear + 1, CONFIG.month, CONFIG.day, CONFIG.hour, CONFIG.minute, 0);
+                }
             }
             
             const diff = birthday - now;
@@ -1284,6 +1302,16 @@
         function loadCakeState() {
             const today = new Date();
             const dateKey = getDateKey(today);
+            if (isDemoMode) {
+                // Demo should always start fresh — never read a previous visit's
+                // cut/blown state from localStorage.
+                cakeCut = false;
+                candlesBlown = 0;
+                knifePickedUp = false;
+                cutAngle = 0;
+                renderCake();
+                return;
+            }
             cakeCut = localStorage.getItem(`cut_${dateKey}`) === 'true';
             candlesBlown = parseInt(localStorage.getItem(`blown_${dateKey}`) || '0');
             knifePickedUp = false;
@@ -1370,6 +1398,7 @@
         }
 
         function saveState() {
+            if (isDemoMode) return; // don't persist demo progress between visits
             const today = new Date();
             const dateKey = getDateKey(today);
             localStorage.setItem(`blown_${dateKey}`, candlesBlown.toString());
@@ -1496,8 +1525,10 @@
             const today = new Date();
             const dateKey = getDateKey(today);
             cakeCut = true;
-            localStorage.setItem(`cut_${dateKey}`, 'true');
-            localStorage.setItem(`cutAngle_${dateKey}`, String(cutAngle));
+            if (!isDemoMode) {
+                localStorage.setItem(`cut_${dateKey}`, 'true');
+                localStorage.setItem(`cutAngle_${dateKey}`, String(cutAngle));
+            }
             stopMicrophone();
 
             // Lock the served wedge to wherever the user actually dragged the knife
