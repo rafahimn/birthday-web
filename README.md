@@ -16,3 +16,22 @@ Auth/email verification/reset, database persistence, RLS/authorization, Cloudina
 
 ## Setup
 Copy `.env.example` to `.env.local`, install dependencies, run `npx prisma generate`, `npx prisma db push`, then `npm run dev`.
+
+
+## Vercel deployment fix
+
+This build is configured to run `prisma generate` automatically during install
+and immediately before `next build`. This prevents the common Vercel error:
+
+`Module "@prisma/client" has no exported member 'PrismaClient'`
+
+Before deploying, add `DATABASE_URL` in Vercel Environment Variables.
+Prisma Client generation itself does not require a live database connection,
+but the application does when database-backed routes are executed.
+
+Recommended Vercel settings:
+- Framework Preset: Next.js
+- Build Command: `npm run build`
+- Install Command: `npm install`
+- Node.js: 18.18+ (or the Node version supported by your selected Next.js version)
+
