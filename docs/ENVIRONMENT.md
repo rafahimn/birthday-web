@@ -8,7 +8,7 @@ Set these for Production/Preview as appropriate:
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
 - optional `SMTP_*`, `EMAIL_FROM`, `ADMIN_EMAIL` for direct app mail
 
-There is **no Prisma/DATABASE_URL/DIRECT_URL** in the Supabase-only architecture.
+There is **no Supabase/Supabase/Supabase** in the Supabase-only architecture.
 
 ## Supabase Auth
 1. Authentication > Providers > enable Email and Google.

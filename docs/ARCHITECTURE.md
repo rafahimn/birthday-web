@@ -7,4 +7,4 @@
 - Gmail SMTP: configure it in Supabase Authentication SMTP settings so Supabase verification/recovery/auth emails use Gmail
 - Vercel: production deployment
 - Server-side Supabase REST calls use the service-role key only; it is never exposed to the browser.
-- No Prisma, Prisma Client, DATABASE_URL or DIRECT_URL is required.
+- No Supabase, Supabase, Supabase or Supabase is required.

@@ -1,2 +1,20 @@
-'use client';import {useEffect,useRef,useState} from 'react';import type {BirthdayContent} from '@/lib/types';
-export function MasterTemplate({content,demo=false,slug}:{content:BirthdayContent;demo?:boolean;slug?:string}){const [screen,setScreen]=useState(0),[cut,setCut]=useState(false),[candles,setCandles]=useState([true,true,true]),[typed,setTyped]=useState(''),[blown,setBlown]=useState(false);const timer=useRef<any>(null);const name=content.name||slug||'Birthday Star';const greeting=`${content.greeting||'Happy Birthday'}, ${name}!`;useEffect(()=>{let i=0;setTyped('');timer.current=setInterval(()=>{i++;setTyped(greeting.slice(0,i));if(i>=greeting.length)clearInterval(timer.current)},45);return()=>clearInterval(timer.current)},[greeting]);function blow(i:number){setCandles(a=>a.map((v,j)=>j===i?false:v));if(candles.filter(Boolean).length<=1)setBlown(true)}const tabs=['Greeting','Cake','Reasons','Photos','Video','Letter','Secret'];return <main className="min-h-full px-5 py-10 text-center" style={{background:`radial-gradient(circle at top, ${content.primaryColor}33, #09090b 55%)`}}><div className="mx-auto max-w-4xl"><p className="text-sm uppercase tracking-[.35em] opacity-70">A special birthday experience</p><h1 className="mt-5 min-h-[5rem] text-5xl font-black md:text-7xl">{typed}</h1><p className="mt-3 text-zinc-300">{content.heroSubtitle}</p><div className="mt-10 rounded-3xl border border-white/10 bg-black/20 p-8"><div className="text-8xl">{cut?'🍰':'🎂'}</div><h2 className="mt-4 text-2xl font-bold">{cut?'Cake Cut! 🎉':'Make a wish'}</h2><div className="mt-6 flex justify-center gap-3">{candles.map((on,i)=><button aria-label={'candle '+(i+1)} key={i} onClick={()=>blow(i)} className="text-5xl transition hover:scale-110">{on?'🕯️':'💨'}</button>)}</div><button onClick={()=>setCut(true)} className="btn mt-7">{cut?'Happy Birthday! 🎉':content.buttonText}</button>{blown&&<p className="mt-3 text-pink-300">All candles are out! Make your wish. ✨</p>}</div><div className="mt-8 flex flex-wrap justify-center gap-2">{tabs.map((x,i)=><button key={x} onClick={()=>setScreen(i)} className={`rounded-full px-4 py-2 text-sm ${screen===i?'bg-white text-black':'bg-white/10'}`}>{x}</button>)}</div><section className="card mx-auto mt-6 max-w-2xl p-7 text-left">{screen===0&&<><h3 className="text-2xl font-bold">{content.heroTitle}</h3><p className="mt-3 text-zinc-300">{content.message}</p></>}{screen===1&&<p>{cut?'Cake cut! Happy Birthday! 🎉':'Tap every candle, then cut the cake.'}</p>}{screen===2&&<div><h3 className="text-xl font-bold">Why you are special</h3><ul className="mt-3 list-disc pl-5 text-zinc-300">{content.reasons.map(r=><li key={r}>{r}</li>)}</ul></div>}{screen===3&&<div className="grid grid-cols-2 gap-3">{content.gallery.length?content.gallery.map(g=><img className="rounded-xl" src={g.url} alt={g.caption||'Memory'} key={g.url}/>):<p className="text-zinc-400">Add photos from the Gallery section.</p>}</div>}{screen===4&&<div>{content.videoUrl?<video className="w-full rounded-xl" controls src={content.videoUrl}/>:<p className="text-zinc-400">Add a video URL in the builder.</p>}</div>}{screen===5&&<div className="space-y-4 font-serif">{content.letter.map((x,i)=><p key={i}>{x}</p>)}</div>}{screen===6&&<div><h3 className="text-xl font-bold">🔐 Secret</h3><p className="mt-3 text-zinc-300">{content.secret}</p></div>}</section>{content.musicUrl&&<audio className="mx-auto mt-6" controls src={content.musicUrl}/>}<footer className="mt-10 text-sm text-zinc-500">Birthday Builder • {demo?'Live Demo':'Published Website'}</footer></div></main>}
+'use client';
+
+import { useMemo } from 'react';
+
+type Props = {
+  data?: { name?: string; age?: number; month?: number; day?: number; hour?: number; minute?: number };
+};
+
+export default function MasterTemplate({ data = {} }: Props) {
+  const src = useMemo(() => {
+    const p = new URLSearchParams();
+    for (const [k,v] of Object.entries(data)) if (v !== undefined && v !== null && v !== '') p.set(k, String(v));
+    return `/master-template.html${p.toString() ? `?${p}` : ''}`;
+  }, [data]);
+
+  return <iframe title="Birthday Master Template" src={src}
+    className="h-full min-h-[760px] w-full border-0"
+    allow="autoplay; microphone; camera; fullscreen"
+    sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts" />;
+}

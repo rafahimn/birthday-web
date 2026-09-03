@@ -1,4 +1,11 @@
+import MasterTemplate from '@/components/template/MasterTemplate';
+import { notFound } from 'next/navigation';
+import { getPublishedSite } from '@/lib/supabase-rest';
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-import {notFound} from 'next/navigation';import {db} from '@/lib/db';import {MasterTemplate} from '@/components/template/MasterTemplate';import {defaultContent} from '@/lib/types';
-export default async function Site({params}:{params:{slug:string}}){const s=await db.website.findUnique({where:{slug:params.slug}});if(!s||s.status!=='published')return notFound();await db.website.update({where:{id:s.id},data:{views:{increment:1}}});await db.analyticsEvent.create({data:{websiteId:s.id,type:'view',path:`/site/${params.slug}`}});return <MasterTemplate content={{...defaultContent,...(s.content as any)}} slug={s.slug}/>}
+export default async function PublishedSite({params}:{params:{slug:string}}){
+  const site=await getPublishedSite(params.slug); if(!site) notFound();
+  const c=site.content||{};
+  return <main className="min-h-screen bg-black"><MasterTemplate data={{
+    name:c.name,age:c.age,month:c.month,day:c.day,hour:c.hour,minute:c.minute
+  }}/></main>;
+}

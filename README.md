@@ -18,7 +18,7 @@ Production-oriented birthday website builder using **Next.js + Supabase + Vercel
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
 - optional direct `SMTP_*` variables for application/admin messages
 
-There is no Prisma setup and no `DATABASE_URL`/`DIRECT_URL`.
+There is no Supabase setup and no `Supabase`/`Supabase`.
 
 ## Google redirect
 In Supabase Authentication > URL Configuration, add:
@@ -28,4 +28,4 @@ In Supabase Authentication > URL Configuration, add:
 Create/sign up a user, then set that user's `profiles.role` to `admin` in Supabase Table Editor/SQL Editor. Admin routes are protected server-side and no public admin-login button is exposed.
 
 ## Verification
-Run `npm run build`. The project contains a Supabase-only preflight script and no Prisma build step.
+Run `npm run build`. The project contains a Supabase-only preflight script and no Supabase build step.
