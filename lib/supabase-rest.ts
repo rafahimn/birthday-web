@@ -21,17 +21,43 @@ export async function supabaseRest<T = any>(path: string, init: RequestInit = {}
   return (text ? JSON.parse(text) : null) as T;
 }
 
+
 export async function getPublishedSite(slug: string) {
   const rows = await supabaseRest<any[]>(
     `websites?select=*&slug=eq.${encodeURIComponent(slug)}&status=eq.published&limit=1`
   );
-  const site = rows?.[0] || null;
-  if (site) {
-    // Fire-and-forget view counter so a failed increment never breaks the page render.
-    supabaseRest('rpc/increment_website_views', {
+  const site = rows?.[0];
+  if (!site) return null;
+  return {
+    ...site,
+    content: site.content || {},
+    views: Number(site.views || 0),
+  };
+}
+
+export async function supabaseStorageUpload(
+  bucket: string,
+  path: string,
+  file: File
+) {
+  const { url, key } = base();
+  const response = await fetch(
+    `${url}/storage/v1/object/${encodeURIComponent(bucket)}/${path.split('/').map(encodeURIComponent).join('/')}`,
+    {
       method: 'POST',
-      body: JSON.stringify({ p_website_id: site.id }),
-    }).catch(() => {});
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': file.type || 'application/octet-stream',
+        'x-upsert': 'true',
+      },
+      body: Buffer.from(await file.arrayBuffer()),
+      cache: 'no-store',
+    }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Supabase Storage ${response.status}: ${text}`);
   }
-  return site;
+  return `${url}/storage/v1/object/public/${bucket}/${path.split('/').map(encodeURIComponent).join('/')}`;
 }

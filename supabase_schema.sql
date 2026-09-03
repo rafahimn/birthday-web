@@ -2,6 +2,12 @@
 -- Run this entire file in Supabase SQL Editor.
 create extension if not exists pgcrypto;
 
+-- Supabase Storage bucket used by the application upload API.
+insert into storage.buckets (id, name, public)
+values ('birthday-builder', 'birthday-builder', true)
+on conflict (id) do update set public = excluded.public;
+
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text unique,

@@ -1,11 +1,23 @@
 import MasterTemplate from '@/components/template/MasterTemplate';
 import { notFound } from 'next/navigation';
-import { getPublishedSite } from '@/lib/supabase-rest';
+import { getPublishedSite, supabaseRest } from '@/lib/supabase-rest';
+
 export const dynamic = 'force-dynamic';
-export default async function PublishedSite({params}:{params:{slug:string}}){
-  const site=await getPublishedSite(params.slug); if(!site) notFound();
-  const c=site.content||{};
+export const runtime = 'nodejs';
+
+export default async function PublishedSite({ params }: { params: { slug: string } }) {
+  const site = await getPublishedSite(params.slug);
+  if (!site) notFound();
+  const c = site.content || {};
+  try {
+    await supabaseRest(`rpc/increment_website_views`, {
+      method: 'POST',
+      body: JSON.stringify({ p_website_id: site.id }),
+    });
+  } catch (error) {
+    console.error('view increment failed', error);
+  }
   return <main className="min-h-screen bg-black"><MasterTemplate data={{
-    name:c.name,age:c.age,month:c.month,day:c.day,hour:c.hour,minute:c.minute
-  }}/></main>;
+    name: c.name, age: c.age, month: c.month, day: c.day, hour: c.hour, minute: c.minute
+  }} /></main>;
 }

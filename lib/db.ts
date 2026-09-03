@@ -12,7 +12,8 @@ const columns: Record<string,string> = { user:'*', profile:'*', website:'*', tem
 function enc(v:any){return encodeURIComponent(String(v));}
 function query(where:Where={}, extra='') {
   const parts:string[]=[];
-  for (const [k,v] of Object.entries(where)) {
+  for (const [rawKey,v] of Object.entries(where)) {
+    const k=snakeKey(rawKey);
     if (v && typeof v==='object' && 'in' in v) parts.push(`${k}=in.(${v.in.map(enc).join(',')})`);
     else if (v === null) parts.push(`${k}=is.null`);
     else parts.push(`${k}=eq.${enc(v)}`);
@@ -44,18 +45,18 @@ class Repo {
   constructor(private model:Model) {}
   private table(){return tables[this.model]}
   async findUnique({where}:any){
-    const key=Object.keys(where)[0], val=where[key];
+    const rawKey=Object.keys(where)[0], val=where[rawKey], key=snakeKey(rawKey);
     const rows=await supabaseRest<any[]>(`${this.table()}?select=${columns[this.model]}&${key}=eq.${enc(val)}&limit=1`);
     return mapRow(rows?.[0]||null);
   }
   async findFirst({where={},orderBy}:any={}){
     let path=`${this.table()}?select=${columns[this.model]}${query(where)}&limit=1`;
-    if(orderBy){const [k,dir]=Object.entries(orderBy)[0] as [string,any];path += `&order=${k}.${dir==='asc'?'asc':'desc'}`}
+    if(orderBy){const [k,dir]=Object.entries(orderBy)[0] as [string,any];path += `&order=${snakeKey(k)}.${dir==='asc'?'asc':'desc'}`}
     const rows=await supabaseRest<any[]>(path); return mapRow(rows?.[0]||null);
   }
   async findMany({where={},orderBy,select,take}:any={}){
     let path=`${this.table()}?select=${select?Object.keys(select).filter(k=>select[k]).join(','):columns[this.model]}${query(where)}`;
-    if(orderBy){const [k,dir]=Object.entries(orderBy)[0] as [string,any];path += `&order=${k}.${dir==='asc'?'asc':'desc'}`}
+    if(orderBy){const [k,dir]=Object.entries(orderBy)[0] as [string,any];path += `&order=${snakeKey(k)}.${dir==='asc'?'asc':'desc'}`}
     if(take) path += `&limit=${take}`;
     const rows=await supabaseRest<any[]>(path); return (rows||[]).map(mapRow);
   }
@@ -65,7 +66,7 @@ class Repo {
     const rows=await supabaseRest<any[]>(this.table(),{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(payload)}); return mapRow(rows?.[0]);
   }
   async update({where,data}:any){
-    const key=Object.keys(where)[0], val=where[key];
+    const rawKey=Object.keys(where)[0], val=where[rawKey], key=snakeKey(rawKey);
     const payload=mapInput(data);
     for(const [k,v] of Object.entries(data||{})){
       if(v && typeof v==='object' && 'increment' in (v as any)){
