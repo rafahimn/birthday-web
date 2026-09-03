@@ -238,6 +238,23 @@
             .video-grid { grid-template-columns:1fr; } 
         }
     </style>
+
+<style id="bb-feature-css">
+#bbFeatures{position:fixed;right:16px;bottom:16px;z-index:10000;font-family:system-ui,sans-serif;color:#fff}
+#bbFeatureToggle{border:1px solid rgba(255,255,255,.35);background:rgba(15,23,42,.8);backdrop-filter:blur(14px);color:#fff;border-radius:999px;padding:11px 15px;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+#bbFeaturePanel{display:none;width:min(390px,calc(100vw - 32px));max-height:min(72vh,650px);overflow:auto;margin-bottom:10px;border-radius:24px;padding:18px;background:rgba(15,23,42,.94);border:1px solid rgba(255,255,255,.15);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+#bbFeaturePanel.open{display:block}
+.bb-f-title{font-size:20px;font-weight:800;margin-bottom:4px}.bb-f-sub{font-size:12px;color:#cbd5e1;margin-bottom:14px}
+.bb-f-card{padding:13px;border-radius:16px;background:rgba(255,255,255,.07);margin:9px 0}
+.bb-f-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bb-f-btn{border:0;border-radius:12px;padding:9px 12px;background:#ec4899;color:#fff;cursor:pointer;font-weight:700}.bb-f-btn.alt{background:rgba(255,255,255,.12)}
+.bb-f-input,.bb-f-textarea{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.07);color:#fff;padding:9px;margin:5px 0}.bb-f-textarea{min-height:70px;resize:vertical}
+.bb-profile{display:flex;gap:12px;align-items:center}.bb-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:#334155;display:grid;place-items:center;font-size:22px}
+.bb-reactions{display:flex;gap:6px;flex-wrap:wrap}.bb-reaction{font-size:21px;border:0;border-radius:12px;padding:7px;background:rgba(255,255,255,.08);cursor:pointer}
+.bb-wish{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.1)}.bb-wish:last-child{border-bottom:0}
+.bb-badge{display:inline-flex;gap:5px;align-items:center;padding:6px 9px;border-radius:999px;background:rgba(236,72,153,.15);margin:3px;font-size:12px}
+#bbEmojiRain{position:fixed;inset:0;pointer-events:none;z-index:10001;overflow:hidden}.bb-rain{position:absolute;top:-40px;font-size:28px;animation:bbRain 1.8s linear forwards}@keyframes bbRain{to{transform:translateY(110vh) rotate(360deg);opacity:0}}
+@media print{body>*:not(#bbPrintRoot){display:none!important}#bbPrintRoot{display:block!important}}
+</style>
 </head>
 <body>
     <div class="floating-elements" id="floatingElements"></div>
@@ -2027,5 +2044,62 @@
             if (resetTimer) clearTimeout(resetTimer); 
         });
     </script>
+
+<script id="bb-phase-features">
+(function(){
+'use strict';
+let BB={content:null,slug:'',recipientId:''};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function post(type,extra){if(!BB.slug)return;fetch('/api/public/interactions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slug:BB.slug,type,recipientId:BB.recipientId,...extra})}).catch(()=>{});}
+function currentRecipient(){const rs=Array.isArray(BB.content?.recipients)?BB.content.recipients:[];return rs.find(r=>String(r.id)===String(BB.recipientId))||null}
+function txt(key,fallback){const c=BB.content||{}, lang=c.language||'en';return c.translations?.[lang]?.[key]||fallback}
+function share(url,text){
+ if(navigator.share){navigator.share({title:text||document.title,url}).catch(()=>{});return}
+ navigator.clipboard?.writeText(url).then(()=>alert('Link copied!')).catch(()=>prompt('Copy this link:',url));
+}
+function rain(emoji){const root=document.getElementById('bbEmojiRain');if(!root)return;for(let i=0;i<18;i++){const x=document.createElement('span');x.className='bb-rain';x.textContent=emoji;x.style.left=(Math.random()*100)+'%';x.style.animationDelay=(Math.random()*.35)+'s';root.appendChild(x);setTimeout(()=>x.remove(),2300)}}
+async function loadInteractions(){
+ if(!BB.slug)return;
+ try{const r=await fetch('/api/public/interactions?slug='+encodeURIComponent(BB.slug)+'&recipient='+encodeURIComponent(BB.recipientId));const j=await r.json();
+ const wc=document.getElementById('bbWishes');if(wc)wc.innerHTML=(j.wishes||[]).map(w=>`<div class="bb-wish"><b>${esc(w.authorName)}</b><div>${esc(w.message)}</div></div>`).join('')||'<div class="bb-f-sub">Be the first to leave a wish.</div>';
+ const rc=document.getElementById('bbReactionCounts');if(rc)rc.innerHTML=Object.entries(j.reactionCounts||{}).map(([e,n])=>`<span class="bb-badge">${e} ${n}</span>`).join('');
+ }catch{}
+}
+function render(){
+ const c=BB.content||{}, r=currentRecipient(), root=document.getElementById('bbFeatures');
+ if(!root)return;
+ const publicUrl=location.origin+'/site/'+encodeURIComponent(BB.slug)+(BB.recipientId?('?recipient='+encodeURIComponent(BB.recipientId)):'');
+ const profile=c.profile||{}, name=r?.name||c.name||'Birthday Star';
+ let capsule='';
+ if(c.timeCapsuleEnabled){const unlock=c.timeCapsuleUnlockAt?new Date(c.timeCapsuleUnlockAt):null;const locked=unlock&&!Number.isNaN(unlock.getTime())&&Date.now()<unlock.getTime();capsule=`<div class="bb-f-card"><b>⏳ Time Capsule</b><p class="bb-f-sub">${locked?'Locked until '+unlock.toLocaleString():esc(c.timeCapsuleMessage||'Your time capsule is ready!')}</p></div>`}
+ root.innerHTML=`<button id="bbFeatureToggle">✨ More</button><div id="bbFeaturePanel">
+ <div class="bb-f-title">${esc(txt('greeting',c.greeting||'Happy Birthday'))}, ${esc(name)}! 🎂</div><div class="bb-f-sub">Personalized birthday experience</div>
+ <div class="bb-f-card bb-profile">${profile.avatarUrl?`<img class="bb-avatar" src="${esc(profile.avatarUrl)}" alt="">`:'<div class="bb-avatar">🎂</div>'}<div><b>${esc(profile.displayName||c.name||'Birthday Builder')}</b><div class="bb-f-sub">${esc(profile.bio||'Made with love.')}</div></div></div>
+ ${r?.message?`<div class="bb-f-card"><b>💌 A personal note for you</b><div style="margin-top:5px">${esc(r.message)}</div></div>`:''}
+ <div class="bb-f-card"><b>🔗 Share</b><div class="bb-f-row" style="margin-top:8px"><button class="bb-f-btn" id="bbShare">Share</button>${c.whatsappShare?'<button class="bb-f-btn" id="bbWA">WhatsApp</button>':''}${c.messengerShare?'<button class="bb-f-btn alt" id="bbMessenger">Messenger</button>':''}</div><div style="margin-top:10px"><img alt="QR Code" loading="lazy" style="width:150px;height:150px;border-radius:12px;background:white;padding:6px" src="https://quickchart.io/qr?size=180&text=${encodeURIComponent(publicUrl)}"></div></div>
+ ${c.gamificationEnabled?`<div class="bb-f-card"><b>🏆 Badges</b><div style="margin-top:7px">${(c.badges||[]).map(b=>`<span class="bb-badge">${esc(b.icon||'🏅')} ${esc(b.label)}</span>`).join('')||'<span class="bb-f-sub">Keep exploring to earn badges!</span>'}</div></div>`:''}
+ ${c.groupBirthdayEnabled&&c.groupMembers?.length?`<div class="bb-f-card"><b>👥 Group Birthday</b>${c.groupMembers.map(m=>`<div class="bb-wish"><b>${esc(m.name)}</b><div>${esc(m.message)}</div></div>`).join('')}</div>`:''}
+ ${c.liveReactionsEnabled?`<div class="bb-f-card"><b>💖 Live Reactions</b><div class="bb-reactions" style="margin-top:7px">${['❤️','😍','🎉','🥳','🎂','💖','🔥','👏'].map(e=>`<button class="bb-reaction" data-emoji="${e}">${e}</button>`).join('')}</div><div id="bbReactionCounts" style="margin-top:6px"></div></div>`:''}
+ ${c.collaborativeWishesEnabled?`<div class="bb-f-card"><b>✍️ Collaborative Wishes</b><input id="bbWishName" class="bb-f-input" placeholder="Your name"><textarea id="bbWishMessage" class="bb-f-textarea" placeholder="Write a birthday wish..."></textarea><button id="bbWishSend" class="bb-f-btn">Add Wish</button><div id="bbWishes" style="margin-top:8px"></div></div>`:''}
+ ${capsule}
+ <div class="bb-f-card"><div class="bb-f-row">${c.pdfDownloadEnabled?'<button class="bb-f-btn alt" id="bbPDF">📄 Save / Print PDF</button>':''}${c.referralEnabled?'<button class="bb-f-btn alt" id="bbReferral">🎁 Referral</button>':''}</div></div>
+ ${c.madeWithBadge?'<div style="text-align:center;font-size:11px;color:#cbd5e1;margin-top:8px">✨ Made with Birthday Builder</div>':''}
+ ${c.googlePhotosEnabled?'<div class="bb-f-sub" style="margin-top:8px">📷 Google Photos import is enabled for this project. Connect Google Photos in the dashboard to import albums.</div>':''}
+ </div><div id="bbEmojiRain"></div>`;
+ document.getElementById('bbFeatureToggle').onclick=()=>document.getElementById('bbFeaturePanel').classList.toggle('open');
+ document.getElementById('bbShare')?.addEventListener('click',()=>{post('share');share(publicUrl,'Birthday')});
+ document.getElementById('bbWA')?.addEventListener('click',()=>{post('whatsapp_share');location.href='https://wa.me/?text='+encodeURIComponent('🎂 '+name+' — '+publicUrl)});
+ document.getElementById('bbMessenger')?.addEventListener('click',()=>{post('messenger_share');window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(publicUrl),'_blank','noopener')});
+ document.querySelectorAll('.bb-reaction').forEach(b=>b.addEventListener('click',async()=>{const e=b.getAttribute('data-emoji')||'❤️';rain(e);post('reaction',{emoji:e});await loadInteractions()}));
+ document.getElementById('bbWishSend')?.addEventListener('click',async()=>{const n=document.getElementById('bbWishName'),m=document.getElementById('bbWishMessage');if(!m?.value.trim())return;m.disabled=true;await fetch('/api/public/interactions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slug:BB.slug,type:'wish',recipientId:BB.recipientId,name:n?.value||'Anonymous',message:m.value})});m.value='';m.disabled=false;loadInteractions()});
+ document.getElementById('bbPDF')?.addEventListener('click',()=>{post('pdf');window.print()});
+ document.getElementById('bbReferral')?.addEventListener('click',()=>{post('referral_click');share(publicUrl+(publicUrl.includes('?')?'&':'?')+'ref='+encodeURIComponent(c.referralCode||'birthday'),'Invite a friend')});
+ loadInteractions();
+ post('view');
+}
+window.addEventListener('message',e=>{if(!e.data||e.data.type!=='BB_CONTENT')return;BB={content:e.data.content||{},slug:e.data.websiteSlug||'',recipientId:e.data.recipientId||''};render()});
+window.addEventListener('DOMContentLoaded',()=>{const root=document.createElement('div');root.id='bbFeatures';document.body.appendChild(root);});
+})();
+</script>
 </body>
 </html>

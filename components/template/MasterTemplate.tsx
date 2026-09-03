@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { BirthdayContent } from '@/lib/types';
 
 type Props = {
@@ -8,6 +8,8 @@ type Props = {
   content?: BirthdayContent;
   /** Demo/preview mode: countdown always ends 10 seconds after load, then behaves as normal. */
   demo?: boolean;
+  websiteSlug?: string;
+  recipientId?: string;
 };
 
 function contentToData(content?: BirthdayContent) {
@@ -23,7 +25,8 @@ function contentToData(content?: BirthdayContent) {
   return result;
 }
 
-export default function MasterTemplate({ data, content, demo }: Props) {
+export default function MasterTemplate({ data, content, demo, websiteSlug, recipientId }: Props) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
   const resolved = useMemo(() => ({ ...contentToData(content), ...data }), [content, data]);
   const src = useMemo(() => {
     const p = new URLSearchParams();
@@ -31,11 +34,22 @@ export default function MasterTemplate({ data, content, demo }: Props) {
       if (v !== undefined && v !== null && v !== '') p.set(k, String(v));
     }
     if (demo) p.set('demo', '1');
+    if (recipientId) p.set('recipient', recipientId);
     return `/master-template.html${p.toString() ? `?${p.toString()}` : ''}`;
-  }, [resolved, demo]);
+  }, [resolved, demo, recipientId]);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const send = () => frame.contentWindow?.postMessage({ type: 'BB_CONTENT', content, websiteSlug: websiteSlug || '', recipientId: recipientId || '' }, '*');
+    frame.addEventListener('load', send);
+    send();
+    return () => frame.removeEventListener('load', send);
+  }, [content, websiteSlug, recipientId]);
 
   return (
     <iframe
+      ref={frameRef}
       title="Birthday Master Template"
       src={src}
       className="h-full min-h-[760px] w-full border-0"

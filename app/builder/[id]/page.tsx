@@ -4,6 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { defaultContent, BirthdayContent } from '@/lib/types';
 import { MasterTemplate } from '@/components/template/MasterTemplate';
 import { SingleMediaUpload, GalleryUpload } from './MediaUploader';
+import FeatureControls from './FeatureControls';
+import RecipientAnalytics from './RecipientAnalytics';
 
 const fields: [keyof BirthdayContent, string][] = [
   ['name', 'Birthday Person'], ['birthday', 'Birthday'], ['greeting', 'Greeting'], ['message', 'Birthday Message'], ['relationship', 'Relationship'],
@@ -11,7 +13,7 @@ const fields: [keyof BirthdayContent, string][] = [
   ['secret', 'Secret Message'], ['buttonText', 'Button Text'], ['seoTitle', 'SEO Title'], ['seoDescription', 'SEO Description'],
 ];
 
-const TABS = ['Basic', 'Hero', 'Gallery', 'Music', 'Video', 'Letter', 'Theme', 'Effects', 'Timeline', 'Memories', 'Wishlist', 'Guestbook', 'SEO', 'Advanced'];
+const TABS = ['Basic', 'Hero', 'Gallery', 'Music', 'Video', 'Letter', 'Theme', 'Effects', 'Timeline', 'Memories', 'Wishlist', 'Guestbook', 'SEO', 'Growth', 'Advanced'];
 
 export default function Builder() {
   const { id } = useParams<{ id: string }>();
@@ -19,9 +21,15 @@ export default function Builder() {
   const [c, setC] = useState<BirthdayContent>(defaultContent);
   const [tab, setTab] = useState('Basic');
   const [msg, setMsg] = useState('');
+  const [slug, setSlug] = useState('');
+  const [status, setStatus] = useState('draft');
 
   useEffect(() => {
-    fetch('/api/websites/' + id).then(r => r.json()).then(j => j.content && setC({ ...defaultContent, ...j.content }));
+    fetch('/api/websites/' + id).then(r => r.json()).then(j => {
+      if (j.content) setC({ ...defaultContent, ...j.content });
+      if (j.slug) setSlug(j.slug);
+      if (j.status) setStatus(j.status);
+    });
   }, [id]);
 
   async function save(publish = false) {
@@ -33,6 +41,7 @@ export default function Builder() {
     });
     const j = await r.json();
     setMsg(r.ok ? (publish ? 'Published!' : 'Saved!') : (j.error || 'Error'));
+    if (r.ok) setStatus(publish ? 'published' : 'draft');
     if (publish) router.refresh();
   }
 
@@ -91,6 +100,8 @@ export default function Builder() {
               <SingleMediaUpload kind="video" url={c.videoUrl} onChange={videoUrl => setC({ ...c, videoUrl })} />
             </div>
           )}
+
+          {tab === 'Growth' && <FeatureControls content={c} onChange={setC} websiteId={id} siteSlug={slug} siteStatus={status} />}
 
           {['Letter', 'Theme', 'Effects', 'Timeline', 'Memories', 'Wishlist', 'Guestbook', 'SEO', 'Advanced'].includes(tab) && (
             <div className="mt-5 space-y-4">

@@ -5,7 +5,14 @@ import { getPublishedSite, supabaseRest } from '@/lib/supabase-rest';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export default async function PublishedSite({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const site = await getPublishedSite(params.slug);
+  const c:any = site?.content || {};
+  const base = process.env.NEXT_PUBLIC_APP_URL || '';
+  return { title: c.seoTitle || c.greeting || 'Happy Birthday', description: c.seoDescription || 'A special birthday website.', openGraph: { title: c.seoTitle || c.greeting || 'Happy Birthday', description: c.seoDescription || '', images: [{ url: `${base}/api/og?slug=${encodeURIComponent(params.slug)}` }] } };
+}
+
+export default async function PublishedSite({ params, searchParams }: { params: { slug: string }, searchParams?: { recipient?: string; to?: string } }) {
   const site = await getPublishedSite(params.slug);
   if (!site) notFound();
   const c = site.content || {};
@@ -17,5 +24,5 @@ export default async function PublishedSite({ params }: { params: { slug: string
   } catch (error) {
     console.error('view increment failed', error);
   }
-  return <main className="min-h-screen bg-black"><MasterTemplate content={c} /></main>;
+  return <main className="min-h-screen bg-black"><MasterTemplate content={c} websiteSlug={params.slug} recipientId={searchParams?.recipient || searchParams?.to || ''} /></main>;
 }

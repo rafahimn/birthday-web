@@ -28,6 +28,19 @@ create table if not exists public.templates (
 create table if not exists public.template_categories (
   id uuid primary key default gen_random_uuid(), name text unique not null, slug text unique not null, description text, active boolean not null default true, sort integer not null default 0, created_at timestamptz not null default now()
 );
+-- Seed the built-in template catalog so it exists as real rows (needed for
+-- admin features like Template Spotlight, which read from this table).
+insert into public.templates (slug,name,category,description) values
+  ('master','Master Template','master','Original HTML experience'),
+  ('romantic','Romantic','romantic','Soft romantic style'),
+  ('cute','Cute','cute','Playful birthday style'),
+  ('luxury','Luxury','luxury','Premium elegant style'),
+  ('anime','Anime','anime','Anime-inspired style'),
+  ('gaming','Gaming','gaming','Gaming birthday style'),
+  ('minimal','Minimal','minimal','Clean minimal style'),
+  ('elegant','Elegant','elegant','Classic elegant style'),
+  ('festival','Festival','festival','Colorful celebration style')
+on conflict (slug) do nothing;
 create table if not exists public.websites (
   id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,
   slug text unique not null, title text not null, status text not null default 'draft' check(status in ('draft','published','archived')),
@@ -175,3 +188,68 @@ create policy demo_public_read on public.demo_sites for select using(active=true
 insert into public.template_categories(name,slug,description,sort) values
 ('Master','master','Original birthday HTML-based template',0),('Romantic','romantic','Romantic birthday experiences',1),('Cute','cute','Cute and playful experiences',2),('Luxury','luxury','Premium visual style',3),('Anime','anime','Anime-inspired style',4),('Gaming','gaming','Gaming style',5),('Minimal','minimal','Clean minimal style',6),('Elegant','elegant','Elegant style',7),('Festival','festival','Celebration style',8)
 on conflict(slug) do nothing;
+
+
+-- Birthday Builder Phase 1/3/4 features. Safe to run repeatedly.
+alter table public.websites drop column if exists custom_domain;
+alter table public.websites add column if not exists referral_code text;
+create unique index if not exists websites_referral_code_idx on public.websites(referral_code) where referral_code is not null;
+
+-- Note: recipient identity is tracked via metadata->>'recipientKey' (matching
+-- an id inside websites.content.recipients) rather than a separate lookup
+-- table, since a recipient link can be created and edited entirely inside
+-- the JSON content without a DB round-trip. recipient_id below is kept as a
+-- plain nullable column for forward-compatibility but isn't populated yet.
+create table if not exists public.recipient_events (
+  id uuid primary key default gen_random_uuid(),
+  website_id uuid not null references public.websites(id) on delete cascade,
+  recipient_id uuid,
+  type text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.collaborative_wishes (
+  id uuid primary key default gen_random_uuid(),
+  website_id uuid not null references public.websites(id) on delete cascade,
+  recipient_id uuid,
+  author_name text not null,
+  message text not null,
+  approved boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.reactions (
+  id uuid primary key default gen_random_uuid(),
+  website_id uuid not null references public.websites(id) on delete cascade,
+  recipient_id uuid,
+  emoji text not null,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.referrals (
+  id uuid primary key default gen_random_uuid(),
+  website_id uuid not null references public.websites(id) on delete cascade,
+  code text not null,
+  referred_from text,
+  created_at timestamptz not null default now()
+);
+create index if not exists recipient_events_website_idx on public.recipient_events(website_id);
+create index if not exists collaborative_wishes_website_idx on public.collaborative_wishes(website_id);
+create index if not exists reactions_website_idx on public.reactions(website_id);
+
+alter table public.recipient_events enable row level security;
+alter table public.collaborative_wishes enable row level security;
+alter table public.reactions enable row level security;
+alter table public.referrals enable row level security;
+drop policy if exists recipient_events_owner on public.recipient_events;
+drop policy if exists wishes_public_read on public.collaborative_wishes;
+drop policy if exists wishes_public_insert on public.collaborative_wishes;
+drop policy if exists reactions_public_insert on public.reactions;
+drop policy if exists reactions_public_read on public.reactions;
+drop policy if exists referrals_owner on public.referrals;
+create policy recipient_events_owner on public.recipient_events for all using(exists(select 1 from public.websites w where w.id=website_id and w.user_id=auth.uid())) with check(exists(select 1 from public.websites w where w.id=website_id and w.user_id=auth.uid()));
+create policy wishes_public_read on public.collaborative_wishes for select using(approved=true);
+create policy wishes_public_insert on public.collaborative_wishes for insert with check(true);
+create policy reactions_public_insert on public.reactions for insert with check(true);
+create policy reactions_public_read on public.reactions for select using(true);
+create policy referrals_owner on public.referrals for all using(exists(select 1 from public.websites w where w.id=website_id and w.user_id=auth.uid())) with check(exists(select 1 from public.websites w where w.id=website_id and w.user_id=auth.uid()));
+
+create index if not exists recipient_events_created_idx on public.recipient_events(created_at desc);

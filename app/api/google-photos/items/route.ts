@@ -1,0 +1,3 @@
+import {NextResponse} from 'next/server'; import {getSessionUser} from '@/lib/auth'; import {getGooglePhotosToken} from '@/lib/google-photos';
+export const runtime='nodejs';
+export async function GET(req:Request){const u=await getSessionUser();if(!u)return NextResponse.json({error:'Unauthorized'},{status:401});const token=await getGooglePhotosToken(u);const id=new URL(req.url).searchParams.get('sessionId');if(!token||!id)return NextResponse.json({error:'sessionId required'},{status:400});const r=await fetch('https://photospicker.googleapis.com/v1/mediaItems?sessionId='+encodeURIComponent(id),{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});return NextResponse.json(await r.json(),{status:r.status});}
