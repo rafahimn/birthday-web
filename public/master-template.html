@@ -6,7 +6,7 @@
 
     <meta property="og:title" content="Something's Coming 💫">
     <meta property="og:description" content="Tap to open when the time is right ✨">
-    <meta property="og:url" content="https://rafahimnn.github.io">
+    <meta property="og:url" content="">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary">
     
@@ -561,31 +561,45 @@
                 <button type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Send Message</button>
                 <div id="form-status"></div>
             </form>
-            <div class="social-buttons">
-                <a href="https://www.facebook.com/rafahimn" target="_blank" class="social-btn facebook"><i class="fab fa-facebook-f"></i><span>Facebook</span><i class="fas fa-arrow-right arrow"></i></a>
-                <a href="https://www.instagram.com/rafahimn" target="_blank" class="social-btn instagram"><i class="fab fa-instagram"></i><span>Instagram</span><i class="fas fa-arrow-right arrow"></i></a>
+            <div class="social-buttons" id="socialButtons" style="display:none">
+                <a href="#" target="_blank" id="socialFacebook" class="social-btn facebook" style="display:none"><i class="fab fa-facebook-f"></i><span>Facebook</span><i class="fas fa-arrow-right arrow"></i></a>
+                <a href="#" target="_blank" id="socialInstagram" class="social-btn instagram" style="display:none"><i class="fab fa-instagram"></i><span>Instagram</span><i class="fas fa-arrow-right arrow"></i></a>
             </div>
             <button class="close-contact-btn" onclick="closeContactPage()"><i class="fas fa-times"></i> Close</button>
         </div>
     </div>
 
     <script>
-        // EmailJS initialization
-        (function() { 
-            emailjs.init("MV90CKf_ZoIgGoU9w"); 
-        })();
+        // NOTE: this template previously auto-initialized EmailJS with the original
+        // template author's personal account/service IDs, meaning every visitor
+        // message from every customer's site was silently delivered to a stranger's
+        // inbox. There is no per-site EmailJS config in this app's data model yet,
+        // so instead of misdirecting messages we fail honestly until that's added.
+        const _BB_EMAILJS_PUBLIC_KEY = _BB_PARAMS.get('emailjsKey') || '';
+        const _BB_EMAILJS_SERVICE_ID = _BB_PARAMS.get('emailjsService') || '';
+        const _BB_EMAILJS_TEMPLATE_ID = _BB_PARAMS.get('emailjsTemplate') || '';
+        const _BB_EMAILJS_READY = !!(_BB_EMAILJS_PUBLIC_KEY && _BB_EMAILJS_SERVICE_ID && _BB_EMAILJS_TEMPLATE_ID);
+        if (_BB_EMAILJS_READY) emailjs.init(_BB_EMAILJS_PUBLIC_KEY);
 
         // Contact form handler
         document.getElementById('contact-form').addEventListener('submit', function(event) {
             event.preventDefault();
             const statusDiv = document.getElementById('form-status');
-            statusDiv.innerHTML = '📤 Sending...';
             const submitBtn = this.querySelector('button[type="submit"]');
+
+            if (!_BB_EMAILJS_READY) {
+                statusDiv.innerHTML = '✉️ Contact form isn\'t set up for this site yet.';
+                statusDiv.style.color = '#ff4444';
+                setTimeout(() => { statusDiv.innerHTML = ''; }, 4000);
+                return;
+            }
+
+            statusDiv.innerHTML = '📤 Sending...';
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
             submitBtn.disabled = true;
             
-            emailjs.sendForm('rafahimn', 'rafahimn', this)
+            emailjs.sendForm(_BB_EMAILJS_SERVICE_ID, _BB_EMAILJS_TEMPLATE_ID, this)
                 .then(function() { 
                     statusDiv.innerHTML = '✅ Message sent successfully!'; 
                     statusDiv.style.color = '#00ff00'; 
@@ -611,8 +625,22 @@
             hour: Number.isFinite(Number(_BB_PARAMS.get("hour"))) ? Number(_BB_PARAMS.get("hour")) : 0,
             minute: Number.isFinite(Number(_BB_PARAMS.get("minute"))) ? Number(_BB_PARAMS.get("minute")) : 0,
             age: Number.isFinite(Number(_BB_PARAMS.get("age"))) ? Number(_BB_PARAMS.get("age")) : 17,
-            name: _BB_PARAMS.get("name") || "Othoy.."
+            name: _BB_PARAMS.get("name") || "Othoy..",
+            facebook: _BB_PARAMS.get("facebook") || "",
+            instagram: _BB_PARAMS.get("instagram") || ""
         };
+
+        // Show/hide social buttons based on what the site owner actually configured,
+        // instead of always linking out to the template author's personal accounts.
+        (function setupSocialButtons() {
+            const wrap = document.getElementById('socialButtons');
+            const fb = document.getElementById('socialFacebook');
+            const ig = document.getElementById('socialInstagram');
+            let any = false;
+            if (CONFIG.facebook) { fb.href = CONFIG.facebook; fb.style.display = ''; any = true; }
+            if (CONFIG.instagram) { ig.href = CONFIG.instagram; ig.style.display = ''; any = true; }
+            if (wrap) wrap.style.display = any ? '' : 'none';
+        })();
 
         // Parse URL parameters
         const urlParams = new URLSearchParams(window.location.search);
@@ -1951,7 +1979,7 @@
         };
 
         window.goToInstagram = function() { 
-            window.open('https://www.instagram.com/rafahimn', '_blank'); 
+            if (CONFIG.instagram) window.open(CONFIG.instagram, '_blank');
         };
         
         window.openContactPage = function() { 

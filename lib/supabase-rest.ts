@@ -20,3 +20,18 @@ export async function supabaseRest<T = any>(path: string, init: RequestInit = {}
   const text = await response.text();
   return (text ? JSON.parse(text) : null) as T;
 }
+
+export async function getPublishedSite(slug: string) {
+  const rows = await supabaseRest<any[]>(
+    `websites?select=*&slug=eq.${encodeURIComponent(slug)}&status=eq.published&limit=1`
+  );
+  const site = rows?.[0] || null;
+  if (site) {
+    // Fire-and-forget view counter so a failed increment never breaks the page render.
+    supabaseRest('rpc/increment_website_views', {
+      method: 'POST',
+      body: JSON.stringify({ p_website_id: site.id }),
+    }).catch(() => {});
+  }
+  return site;
+}
