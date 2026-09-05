@@ -2072,6 +2072,13 @@ function render(){
  const profile=c.profile||{}, name=r?.name||c.name||'Birthday Star';
  let capsule='';
  if(c.timeCapsuleEnabled){const unlock=c.timeCapsuleUnlockAt?new Date(c.timeCapsuleUnlockAt):null;const locked=unlock&&!Number.isNaN(unlock.getTime())&&Date.now()<unlock.getTime();capsule=`<div class="bb-f-card"><b>⏳ Time Capsule</b><p class="bb-f-sub">${locked?'Locked until '+unlock.toLocaleString():esc(c.timeCapsuleMessage||'Your time capsule is ready!')}</p></div>`}
+ let timelineHtml='';
+ if((c.timeline||[]).length){timelineHtml=`<div class="bb-f-card"><b>🗓️ Timeline</b>${c.timeline.map(t=>`<div class="bb-wish"><b>${esc(t.date||'')}</b>${t.title?' — <b>'+esc(t.title)+'</b>':''}${t.description?`<div>${esc(t.description)}</div>`:''}</div>`).join('')}</div>`}
+ let memoriesHtml='';
+ if((c.memories||[]).length){memoriesHtml=`<div class="bb-f-card"><b>📸 Memories</b>${c.memories.map(m=>`<div class="bb-wish">${esc(m)}</div>`).join('')}</div>`}
+ let wishlistHtml='';
+ if((c.wishlist||[]).length){wishlistHtml=`<div class="bb-f-card"><b>🎁 Wishlist</b><ul style="margin-top:6px;padding-left:18px">${c.wishlist.map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`}
+ const customCssHtml=c.customCss?`<style id="bbCustomCss">${c.customCss}</style>`:'';
  root.innerHTML=`<button id="bbFeatureToggle">✨ More</button><div id="bbFeaturePanel">
  <div class="bb-f-title">${esc(txt('greeting',c.greeting||'Happy Birthday'))}, ${esc(name)}! 🎂</div><div class="bb-f-sub">Personalized birthday experience</div>
  <div class="bb-f-card bb-profile">${profile.avatarUrl?`<img class="bb-avatar" src="${esc(profile.avatarUrl)}" alt="">`:'<div class="bb-avatar">🎂</div>'}<div><b>${esc(profile.displayName||c.name||'Birthday Builder')}</b><div class="bb-f-sub">${esc(profile.bio||'Made with love.')}</div></div></div>
@@ -2081,11 +2088,14 @@ function render(){
  ${c.groupBirthdayEnabled&&c.groupMembers?.length?`<div class="bb-f-card"><b>👥 Group Birthday</b>${c.groupMembers.map(m=>`<div class="bb-wish"><b>${esc(m.name)}</b><div>${esc(m.message)}</div></div>`).join('')}</div>`:''}
  ${c.liveReactionsEnabled?`<div class="bb-f-card"><b>💖 Live Reactions</b><div class="bb-reactions" style="margin-top:7px">${['❤️','😍','🎉','🥳','🎂','💖','🔥','👏'].map(e=>`<button class="bb-reaction" data-emoji="${e}">${e}</button>`).join('')}</div><div id="bbReactionCounts" style="margin-top:6px"></div></div>`:''}
  ${c.collaborativeWishesEnabled?`<div class="bb-f-card"><b>✍️ Collaborative Wishes</b><input id="bbWishName" class="bb-f-input" placeholder="Your name"><textarea id="bbWishMessage" class="bb-f-textarea" placeholder="Write a birthday wish..."></textarea><button id="bbWishSend" class="bb-f-btn">Add Wish</button><div id="bbWishes" style="margin-top:8px"></div></div>`:''}
+ ${timelineHtml}
+ ${memoriesHtml}
+ ${wishlistHtml}
  ${capsule}
  <div class="bb-f-card"><div class="bb-f-row">${c.pdfDownloadEnabled?'<button class="bb-f-btn alt" id="bbPDF">📄 Save / Print PDF</button>':''}${c.referralEnabled?'<button class="bb-f-btn alt" id="bbReferral">🎁 Referral</button>':''}</div></div>
  ${c.madeWithBadge?'<div style="text-align:center;font-size:11px;color:#cbd5e1;margin-top:8px">✨ Made with Birthday Builder</div>':''}
  ${c.googlePhotosEnabled?'<div class="bb-f-sub" style="margin-top:8px">📷 Google Photos import is enabled for this project. Connect Google Photos in the dashboard to import albums.</div>':''}
- </div><div id="bbEmojiRain"></div>`;
+ </div><div id="bbEmojiRain"></div>${customCssHtml}`;
  document.getElementById('bbFeatureToggle').onclick=()=>document.getElementById('bbFeaturePanel').classList.toggle('open');
  document.getElementById('bbShare')?.addEventListener('click',()=>{post('share');share(publicUrl,'Birthday')});
  document.getElementById('bbWA')?.addEventListener('click',()=>{post('whatsapp_share');location.href='https://wa.me/?text='+encodeURIComponent('🎂 '+name+' — '+publicUrl)});

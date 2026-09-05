@@ -6,6 +6,7 @@ import { MasterTemplate } from '@/components/template/MasterTemplate';
 import { SingleMediaUpload, GalleryUpload } from './MediaUploader';
 import FeatureControls from './FeatureControls';
 import RecipientAnalytics from './RecipientAnalytics';
+import { TimelineEditor, MemoriesEditor, WishlistEditor, GuestbookToggle } from './ContentListEditors';
 
 const fields: [keyof BirthdayContent, string][] = [
   ['name', 'Birthday Person'], ['birthday', 'Birthday'], ['greeting', 'Greeting'], ['message', 'Birthday Message'], ['relationship', 'Relationship'],
@@ -103,7 +104,12 @@ export default function Builder() {
 
           {tab === 'Growth' && <FeatureControls content={c} onChange={setC} websiteId={id} siteSlug={slug} siteStatus={status} />}
 
-          {['Letter', 'Theme', 'Effects', 'Timeline', 'Memories', 'Wishlist', 'Guestbook', 'SEO', 'Advanced'].includes(tab) && (
+          {tab === 'Timeline' && <div className="mt-5"><TimelineEditor content={c} onChange={setC} /></div>}
+          {tab === 'Memories' && <div className="mt-5"><MemoriesEditor content={c} onChange={setC} /></div>}
+          {tab === 'Wishlist' && <div className="mt-5"><WishlistEditor content={c} onChange={setC} /></div>}
+          {tab === 'Guestbook' && <div className="mt-5"><GuestbookToggle content={c} onChange={setC} /></div>}
+
+          {['Letter', 'Theme', 'Effects', 'SEO', 'Advanced'].includes(tab) && (
             <div className="mt-5 space-y-4">
               <p className="text-zinc-400">{tab} controls are connected to the content model and preview. Use the fields below to configure the experience.</p>
               {tab === 'Letter' && <textarea rows={8} value={c.letter.join('\n')} onChange={e => setC({ ...c, letter: e.target.value.split('\n') })} />}
@@ -132,7 +138,7 @@ export default function Builder() {
                 </div>
               )}
               {tab === 'Advanced' && (
-                <textarea rows={8} value={c.customCss} onChange={e => setC({ ...c, customCss: e.target.value })} placeholder="Custom CSS (future-safe)" />
+                <textarea rows={8} value={c.customCss} onChange={e => setC({ ...c, customCss: e.target.value })} placeholder="Custom CSS — applied on your published site" />
               )}
             </div>
           )}

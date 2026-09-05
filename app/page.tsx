@@ -1,7 +1,22 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
+import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+  let title = 'Birthday Builder — Create beautiful interactive birthday websites';
+  let description = 'Create beautiful interactive birthday websites.';
+  let ogImage: string | undefined;
+  try {
+    const row = await db.setting.findUnique({ where: { key: 'seo_defaults' } });
+    if (row?.value?.title) title = row.value.title;
+    if (row?.value?.description) description = row.value.description;
+    if (row?.value?.ogImage) ogImage = row.value.ogImage;
+  } catch {}
+  return { title, description, openGraph: { title, description, images: ogImage ? [ogImage] : undefined } };
+}
 
 export default async function Home(){
   const u = await getSessionUser().catch(() => null);

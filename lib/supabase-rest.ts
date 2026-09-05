@@ -35,6 +35,15 @@ export async function getPublishedSite(slug: string) {
   };
 }
 
+export async function supabaseStorageDelete(bucket: string, path: string) {
+  const { url, key } = base();
+  const response = await fetch(
+    `${url}/storage/v1/object/${encodeURIComponent(bucket)}/${path.split('/').map(encodeURIComponent).join('/')}`,
+    { method: 'DELETE', headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: 'no-store' }
+  );
+  // Not fatal if the file is already gone; the DB row is the source of truth for the admin UI.
+  return response.ok;
+}
 export async function supabaseStorageUpload(
   bucket: string,
   path: string,

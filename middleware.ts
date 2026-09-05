@@ -21,7 +21,33 @@ function getExpiry(token: string): number | null {
   }
 }
 
+async function maintenanceResponse(req: NextRequest): Promise<NextResponse | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  const { pathname } = req.nextUrl;
+  // Admin routes and auth stay reachable so an admin can always turn maintenance back off.
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api') || pathname.startsWith('/login') || pathname.startsWith('/signup')) return null;
+  try {
+    const r = await fetch(`${url.replace(/\/$/, '')}/rest/v1/settings?select=value&key=eq.maintenance_mode&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: 'no-store',
+    });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    const setting = rows?.[0]?.value;
+    if (!setting?.enabled) return null;
+    const message = typeof setting.message === 'string' && setting.message ? setting.message : 'We are performing scheduled maintenance. Please check back shortly.';
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Maintenance</title><style>body{background:#0b0b12;color:#fff;font-family:system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;padding:24px}div{max-width:480px}h1{font-size:28px;margin-bottom:12px}p{color:#a1a1aa}</style></head><body><div><h1>🎂 Down for a moment</h1><p>${message.replace(/</g, '&lt;')}</p></div></body></html>`;
+    return new NextResponse(html, { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '120' } });
+  } catch {
+    return null;
+  }
+}
+
 export async function middleware(req: NextRequest) {
+  const maintenance = await maintenanceResponse(req);
+  if (maintenance) return maintenance;
+
   const res = NextResponse.next();
 
   const access = req.cookies.get(COOKIE)?.value;
